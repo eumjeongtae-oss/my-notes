@@ -1,4 +1,4 @@
-@AGENTS.md
+@apps/web/AGENTS.md
 
 # my-notes
 
@@ -11,7 +11,7 @@ velog 형식의 화면으로 나만 보는 개인 마크다운 노트 앱. 계�
 - `apps/web`: 프론트 Next.js (포트 3000). 화면만 담당하고 **DB나 백엔드 코드를 import하지 않는다.** 데이터는 오직 REST API로 주고받는다
 - `apps/api`: 백엔드 Next.js (포트 4000). Route Handler로 REST API를 만들고 Prisma로 MySQL에 접근한다
 
-> 🚧 전환 중 (`chore/monorepo` 브랜치): 아래 "구조"의 경로는 아직 단일 앱(`src/`) 기준이다. 옮기면서 갱신한다.
+> 🚧 전환 중 (`chore/monorepo` 브랜치): 지금은 `apps/web`만 있고, Prisma와 DB 코드도 임시로 `apps/web`에 있다. 다음 단계에서 `apps/api`를 만들고 옮긴다.
 
 ## 기술 스택
 
@@ -21,19 +21,28 @@ velog 형식의 화면으로 나만 보는 개인 마크다운 노트 앱. 계�
 
 ## 명령어
 
-- `docker compose up -d --wait`: 로컬 MySQL 실행 (`docker compose down`으로 중지, `down -v`는 데이터까지 삭제). 처음에는 `.env.example`을 복사해 `.env`를 만든다
-- `pnpm prisma migrate dev --name 변경내용`: `schema.prisma` 변경을 마이그레이션으로 만들고 DB에 반영. 이후 `pnpm prisma generate`로 클라이언트 코드 재생성 (Prisma 7은 자동 생성하지 않음)
-- `pnpm prisma db seed`: 개발용 예시 데이터로 초기화 (`prisma/seed.ts`, 기존 데이터 삭제됨)
-- `pnpm prisma studio`: 브라우저에서 DB 내용 보기
-- `pnpm dev`: 개발 서버 (http://localhost:3000)
-- `pnpm build`: 프로덕션 빌드
-- `pnpm lint`: ESLint
-- `pnpm format` / `pnpm format:check`: Prettier (Tailwind 클래스 자동 정렬 포함)
-- `pnpm tsc --noEmit`: 타입 검사. `PageProps`, `LayoutProps` 타입이 없다고 나오면 `pnpm next typegen`을 먼저 실행한다
+모든 명령은 **저장소 루트**에서 실행한다. 특정 앱에서만 실행하려면 `pnpm --filter web ...`을 쓴다.
 
-작업을 마치면 `tsc`, `lint`, `format:check`, `build`를 통과시킨다.
+- `docker compose up -d --wait`: 로컬 MySQL 실행 (`docker compose down`으로 중지, `down -v`는 데이터까지 삭제)
+- `pnpm dev`: 모든 앱의 개발 서버 실행 (web: http://localhost:3000)
+- `pnpm build` / `pnpm lint` / `pnpm typecheck`: 모든 앱에서 빌드, 린트, 타입 검사
+- `pnpm format` / `pnpm format:check`: 저장소 전체 Prettier (Tailwind 클래스 자동 정렬 포함)
+- `pnpm --filter web exec prisma migrate dev --name 변경내용`: 마이그레이션 만들고 DB에 반영. 이후 `pnpm --filter web exec prisma generate` (Prisma 7은 자동 생성하지 않음)
+- `pnpm --filter web exec prisma db seed`: 개발용 예시 데이터로 초기화 (기존 데이터 삭제됨)
+- `pnpm --filter web exec prisma studio`: 브라우저에서 DB 내용 보기
+
+작업을 마치면 `typecheck`, `lint`, `format:check`, `build`를 통과시킨다.
+
+## 환경 변수
+
+앱마다 자기 `.env`를 가진다 (회사에서 레포마다 따로 있는 것과 같다). 각 폴더의 `.env.example`을 복사해서 만든다.
+
+- 루트 `.env`: MySQL 컨테이너 설정 (`compose.yaml`이 읽음)
+- `apps/web/.env`: `DATABASE_URL` (임시. `apps/api`로 옮길 예정)
 
 ## 구조
+
+아래 경로는 `apps/web/` 기준이다.
 
 - `src/app/(main)/`: 헤더가 있는 화면들 (홈, 읽기). 라우트 그룹이라 URL에는 나타나지 않음
 - 화면은 velog 모티브: 카드 목록 홈, 읽기 페이지, 헤더 없는 전체 화면 글쓰기(`/write`, 왼쪽 에디터 + 오른쪽 미리보기)
