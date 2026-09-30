@@ -1,4 +1,4 @@
-import { Header } from "@/components/header";
+import { Header } from "./_components/header";
 
 // (main) 그룹의 페이지(홈, 읽기)가 공유하는 레이아웃.
 // 글쓰기 화면(/write)은 헤더 없이 전체 화면을 쓰기 때문에 이 그룹 밖에 둔다.

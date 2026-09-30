@@ -1,9 +1,10 @@
-import { EmptyNotes } from "@/components/empty-notes";
-import { NoteCard } from "@/components/note-card";
-import { NoteListItem } from "@/components/note-list-item";
-import { NoteListOptions } from "@/components/note-list-options";
 import { parseSort, parseView } from "@/lib/note-list-params";
 import { getNotes } from "@/lib/notes";
+
+import { EmptyNotes } from "./_components/empty-notes";
+import { NoteCard } from "./_components/note-card";
+import { NoteListItem } from "./_components/note-list-item";
+import { NoteListOptions } from "./_components/note-list-options";
 
 export default async function HomePage({ searchParams }: PageProps<"/">) {
   const params = await searchParams;
