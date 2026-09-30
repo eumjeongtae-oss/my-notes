@@ -7,6 +7,7 @@ import {
   Heading2,
   Heading3,
   Heading4,
+  ImageIcon,
   Italic,
   Link,
   SquareCode,
@@ -17,6 +18,7 @@ import {
 
 import {
   insertCodeBlock,
+  insertImage,
   insertLink,
   toggleHeading,
   toggleQuote,
@@ -49,6 +51,7 @@ const groups: ToolbarItem[][] = [
   [
     { label: "인용", Icon: TextQuote, run: toggleQuote },
     { label: "링크", Icon: Link, run: insertLink },
+    { label: "이미지", Icon: ImageIcon, run: insertImage },
     { label: "코드 블록", Icon: SquareCode, run: insertCodeBlock },
   ],
 ];

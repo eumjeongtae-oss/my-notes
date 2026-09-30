@@ -52,24 +52,39 @@ export function wrapSelection(
   view.focus();
 }
 
-// [선택한 글자](https://) 형태로 넣고, 바로 주소를 입력할 수 있게 https:// 부분을 선택한다.
-export function insertLink(view: EditorView) {
+// [글자](https://) 형태로 넣고, 바로 주소를 입력할 수 있게 https:// 부분을 선택한다.
+// 링크와 이미지는 앞에 "!"가 붙는 것만 다르다: [글자](주소) / ![설명](주소)
+function insertUrlSyntax(
+  view: EditorView,
+  prefix: string,
+  placeholder: string,
+) {
   const url = "https://";
   view.dispatch(
     view.state.changeByRange((range) => {
-      const text = view.state.sliceDoc(range.from, range.to) || "링크 텍스트";
-      const urlStart = range.from + text.length + 3; // "[" + text + "](" 길이
+      const text = view.state.sliceDoc(range.from, range.to) || placeholder;
+      const opening = `${prefix}[${text}](`;
+      const urlStart = range.from + opening.length;
       return {
         changes: {
           from: range.from,
           to: range.to,
-          insert: `[${text}](${url})`,
+          insert: `${opening}${url})`,
         },
         range: EditorSelection.range(urlStart, urlStart + url.length),
       };
     }),
   );
   view.focus();
+}
+
+export function insertLink(view: EditorView) {
+  insertUrlSyntax(view, "", "링크 텍스트");
+}
+
+// 지금은 이미지 주소를 직접 붙여넣는 방식이다. 4단계에서 S3 업로드로 바꾼다.
+export function insertImage(view: EditorView) {
+  insertUrlSyntax(view, "!", "이미지 설명");
 }
 
 // 코드 블록(```)으로 감싼다. 줄 중간이면 줄을 바꾼 뒤에 넣는다.
