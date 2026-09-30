@@ -39,7 +39,7 @@ velog 형식의 화면으로 나만 보는 개인 마크다운 노트 앱. 계�
 
 - 루트 `.env`: MySQL 컨테이너 설정 (`compose.yaml`이 읽음)
 - `apps/api/.env`: `DATABASE_URL` (DB 주소는 백엔드만 안다)
-- `apps/web`에는 `.env`가 없다. 다음 단계에서 백엔드 주소(`API_URL`)가 추가될 예정
+- `apps/web/.env`: `API_URL` (백엔드 주소). 프론트는 DB 정보를 갖지 않는다
 
 ## 구조: apps/web (프론트)
 
@@ -49,7 +49,11 @@ velog 형식의 화면으로 나만 보는 개인 마크다운 노트 앱. 계�
   - 한 라우트(그룹)에서만 쓰면 그 폴더의 `_components/`에 둔다 (예: `src/app/(main)/_components/header.tsx`). `_`로 시작하는 폴더는 라우팅에서 제외된다
   - 여러 라우트에서 같이 쓰면 `src/components/`에 둔다 (예: `markdown-preview.tsx`)
   - 한 곳에서만 쓰던 컴포넌트를 다른 라우트에서도 쓰게 되면 `src/components/`로 옮긴다
-- `src/server/notes.ts`: 🚧 임시 가짜 데이터. API 호출 코드로 바뀔 예정
+- `src/api/`: 백엔드 API 호출 함수. 화면은 `fetch`를 직접 쓰지 않고 여기 함수(`getNote` 등)만 호출한다
+  - `client.ts`: 공통 호출 함수 (`API_URL` 붙이기, 실패 시 `ApiError`)
+  - `notes.ts`: 노트 API. JSON의 날짜 문자열을 `Date`로 바꿔서 돌려준다
+  - 지금은 `server-only`(서버 컴포넌트 전용). 브라우저용 호출은 React Query 도입 때 추가
+- `src/server/notes.ts`: 🚧 임시 가짜 데이터. 화면을 `src/api/`로 옮기면 삭제
 - `src/lib/`: 서버와 브라우저 어디서나 쓰는 순수 함수 (`format.ts`, `markdown.ts` 등)
 
 ## 구조: apps/api (백엔드)
