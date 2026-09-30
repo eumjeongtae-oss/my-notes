@@ -4,6 +4,12 @@
 
 velog 형식의 화면으로 나만 보는 개인 마크다운 노트 앱. 계획과 진행 상황은 `docs/roadmap.md`에 있다.
 
+## 기술 스택
+
+- Next.js 16 (App Router), React 19, TypeScript, Tailwind CSS 4, pnpm
+- DB는 MySQL 8, ORM은 Prisma다 (팀 프로젝트와 같은 스택이라 선택. 다른 DB나 ORM을 제안하지 않는다)
+- 개발용 MySQL은 Docker Compose로 로컬에서 띄운다
+
 ## 명령어
 
 - `pnpm dev`: 개발 서버 (http://localhost:3000)
