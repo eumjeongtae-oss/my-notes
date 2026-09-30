@@ -2,12 +2,17 @@
 
 import { markdown, markdownLanguage } from "@codemirror/lang-markdown";
 import { languages } from "@codemirror/language-data";
-import CodeMirror, { EditorView } from "@uiw/react-codemirror";
+import CodeMirror, {
+  EditorView,
+  type ReactCodeMirrorRef,
+} from "@uiw/react-codemirror";
 import { ArrowLeft } from "lucide-react";
 import Link from "next/link";
-import { useState } from "react";
+import { useRef, useState } from "react";
 
 import { MarkdownPreview } from "@/components/markdown-preview";
+
+import { EditorToolbar } from "./editor-toolbar";
 
 // 컴포넌트 밖에 두어서 렌더링마다 새로 만들지 않는다.
 const extensions = [
@@ -19,8 +24,12 @@ const extensions = [
     "&": { fontSize: "1.125rem", backgroundColor: "transparent" },
     "&.cm-focused": { outline: "none" },
     ".cm-scroller": { fontFamily: "inherit", lineHeight: "1.75" },
-    ".cm-content": { padding: "0 0 4rem" },
+    // 커서는 글자 위치에서 왼쪽으로 살짝 삐져나오게 그려진다.
+    // 왼쪽 여백이 0이면 줄 맨 앞의 커서가 잘려서 안 보이므로 2px을 남긴다.
+    // (대신 에디터를 -ml-0.5로 2px 당겨서 글자는 제목과 줄을 맞춘다)
+    ".cm-content": { padding: "0 0 4rem 2px" },
     ".cm-line": { padding: "0" },
+    ".cm-cursor": { borderLeftWidth: "2px", borderLeftColor: "#18181b" },
   }),
 ];
 
@@ -33,6 +42,8 @@ export function NoteEditor({
 }) {
   const [title, setTitle] = useState(initialTitle);
   const [content, setContent] = useState(initialContent);
+  // 툴바가 에디터를 조작할 수 있도록 CodeMirror 인스턴스를 ref로 잡아둔다.
+  const editorRef = useRef<ReactCodeMirrorRef>(null);
 
   return (
     <div className="flex h-full">
@@ -46,7 +57,9 @@ export function NoteEditor({
             className="text-4xl font-bold outline-none placeholder:text-zinc-300"
           />
           <hr className="my-6 w-16 rounded-full border-t-[6px] border-zinc-700" />
+          <EditorToolbar getView={() => editorRef.current?.view} />
           <CodeMirror
+            ref={editorRef}
             value={content}
             onChange={setContent}
             extensions={extensions}
@@ -58,7 +71,7 @@ export function NoteEditor({
             }}
             placeholder="당신의 이야기를 적어보세요..."
             height="100%"
-            className="min-h-0 flex-1"
+            className="-ml-0.5 min-h-0 flex-1"
           />
         </div>
 
