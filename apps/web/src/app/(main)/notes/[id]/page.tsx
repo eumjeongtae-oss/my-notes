@@ -2,9 +2,9 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 
+import { getNote } from "@/api/notes";
 import { MarkdownPreview } from "@/components/markdown-preview";
 import { formatDate } from "@/lib/format";
-import { getNote } from "@/server/notes";
 
 // 브라우저 탭 제목을 노트 제목으로 바꾼다.
 export async function generateMetadata({
@@ -25,6 +25,12 @@ export default async function NotePage({ params }: PageProps<"/notes/[id]">) {
 
   return (
     <div className="mx-auto max-w-3xl px-4 py-16">
+      {/* 시리즈에 속한 노트면 제목 위에 시리즈 이름과 순서를 보여준다 */}
+      {note.series && (
+        <p className="mb-4 text-sm font-semibold text-emerald-600">
+          {note.series.name} · {note.seriesOrder}편
+        </p>
+      )}
       <h1 className="text-4xl leading-tight font-extrabold break-keep sm:text-5xl">
         {note.title}
       </h1>
