@@ -27,14 +27,14 @@ pnpm install
 
 # 환경 변수 파일을 만들고 값을 채운다 (비밀번호는 두 파일에 같은 값)
 cp .env.example .env
-cp apps/web/.env.example apps/web/.env
+cp apps/api/.env.example apps/api/.env
 
 # 로컬 MySQL 실행 (healthy가 될 때까지 기다린다)
 docker compose up -d --wait
 
 # 테이블 만들고 예시 데이터 넣기
-pnpm --filter web exec prisma migrate dev
-pnpm --filter web exec prisma db seed
+pnpm db:migrate
+pnpm db:seed
 
 pnpm dev
 ```
@@ -43,12 +43,12 @@ pnpm dev
 
 ## 자주 쓰는 명령어
 
-| 명령어                                  | 설명                               |
-| --------------------------------------- | ---------------------------------- |
-| `pnpm dev`                              | 모든 앱 개발 서버 실행             |
-| `pnpm typecheck` / `pnpm lint`          | 모든 앱 타입 검사 / 린트           |
-| `docker compose ps`                     | MySQL 컨테이너 상태 확인           |
-| `docker compose down`                   | MySQL 중지 (데이터는 유지)         |
-| `docker compose down -v`                | MySQL 중지하고 **데이터까지 삭제** |
-| `pnpm --filter web exec prisma studio`  | 브라우저에서 DB 내용 보기          |
-| `pnpm --filter web exec prisma db seed` | 예시 데이터로 초기화               |
+| 명령어                         | 설명                               |
+| ------------------------------ | ---------------------------------- |
+| `pnpm dev`                     | 모든 앱 개발 서버 실행             |
+| `pnpm typecheck` / `pnpm lint` | 모든 앱 타입 검사 / 린트           |
+| `docker compose ps`            | MySQL 컨테이너 상태 확인           |
+| `docker compose down`          | MySQL 중지 (데이터는 유지)         |
+| `docker compose down -v`       | MySQL 중지하고 **데이터까지 삭제** |
+| `pnpm db:studio`               | 브라우저에서 DB 내용 보기          |
+| `pnpm db:seed`                 | 예시 데이터로 초기화               |
