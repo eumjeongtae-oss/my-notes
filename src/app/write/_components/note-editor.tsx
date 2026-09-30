@@ -36,9 +36,12 @@ const extensions = [
 export function NoteEditor({
   initialTitle = "",
   initialContent = "",
+  exitHref,
 }: {
   initialTitle?: string;
   initialContent?: string;
+  // 나가기를 눌렀을 때 갈 곳. 새 노트면 홈, 수정 중이면 그 노트의 읽기 페이지
+  exitHref: string;
 }) {
   const [title, setTitle] = useState(initialTitle);
   const [content, setContent] = useState(initialContent);
@@ -78,7 +81,7 @@ export function NoteEditor({
         {/* 하단 바 */}
         <footer className="flex h-16 shrink-0 items-center justify-between px-4 shadow-[0_0_8px_rgba(0,0,0,0.1)]">
           <Link
-            href="/"
+            href={exitHref}
             className="flex items-center gap-2 rounded-md px-3 py-2 text-lg hover:bg-zinc-100"
           >
             <ArrowLeft className="size-5" />
