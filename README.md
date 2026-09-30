@@ -8,10 +8,10 @@ velog 형식의 화면으로 나만 보는 개인 마크다운 노트 앱.
 
 pnpm workspace 모노레포다. 저장소는 하나, 앱은 `apps/` 아래에 있다.
 
-| 폴더       | 역할                         | 포트 |
-| ---------- | ---------------------------- | ---- |
-| `apps/web` | 프론트 (Next.js)             | 3000 |
-| `apps/api` | 백엔드 (Next.js) — 추가 예정 | 4000 |
+| 폴더       | 역할                       | 포트 |
+| ---------- | -------------------------- | ---- |
+| `apps/web` | 프론트 (Next.js)           | 3000 |
+| `apps/api` | 백엔드 (Next.js, REST API) | 4000 |
 
 ## 준비물
 
@@ -39,7 +39,7 @@ pnpm --filter web exec prisma db seed
 pnpm dev
 ```
 
-[http://localhost:3000](http://localhost:3000)에서 확인한다.
+프론트는 [http://localhost:3000](http://localhost:3000), 백엔드 헬스체크는 [http://localhost:4000/api/health](http://localhost:4000/api/health)에서 확인한다.
 
 ## 자주 쓰는 명령어
 

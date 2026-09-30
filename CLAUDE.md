@@ -11,7 +11,7 @@ velog 형식의 화면으로 나만 보는 개인 마크다운 노트 앱. 계�
 - `apps/web`: 프론트 Next.js (포트 3000). 화면만 담당하고 **DB나 백엔드 코드를 import하지 않는다.** 데이터는 오직 REST API로 주고받는다
 - `apps/api`: 백엔드 Next.js (포트 4000). Route Handler로 REST API를 만들고 Prisma로 MySQL에 접근한다
 
-> 🚧 전환 중 (`chore/monorepo` 브랜치): 지금은 `apps/web`만 있고, Prisma와 DB 코드도 임시로 `apps/web`에 있다. 다음 단계에서 `apps/api`를 만들고 옮긴다.
+> 🚧 전환 중 (`chore/monorepo` 브랜치): `apps/api`는 헬스체크(`GET /api/health`)만 있다. Prisma와 DB 코드는 아직 `apps/web`에 있고 다음 단계에서 `apps/api`로 옮긴다.
 
 ## 기술 스택
 
@@ -24,7 +24,7 @@ velog 형식의 화면으로 나만 보는 개인 마크다운 노트 앱. 계�
 모든 명령은 **저장소 루트**에서 실행한다. 특정 앱에서만 실행하려면 `pnpm --filter web ...`을 쓴다.
 
 - `docker compose up -d --wait`: 로컬 MySQL 실행 (`docker compose down`으로 중지, `down -v`는 데이터까지 삭제)
-- `pnpm dev`: 모든 앱의 개발 서버 실행 (web: http://localhost:3000)
+- `pnpm dev`: 모든 앱의 개발 서버를 동시에 실행 (web: http://localhost:3000, api: http://localhost:4000)
 - `pnpm build` / `pnpm lint` / `pnpm typecheck`: 모든 앱에서 빌드, 린트, 타입 검사
 - `pnpm format` / `pnpm format:check`: 저장소 전체 Prettier (Tailwind 클래스 자동 정렬 포함)
 - `pnpm --filter web exec prisma migrate dev --name 변경내용`: 마이그레이션 만들고 DB에 반영. 이후 `pnpm --filter web exec prisma generate` (Prisma 7은 자동 생성하지 않음)
