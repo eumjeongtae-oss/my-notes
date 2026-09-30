@@ -3,7 +3,7 @@ import Link from "next/link";
 import { formatDate } from "@/lib/format";
 import { getExcerpt } from "@/lib/markdown";
 import type { NoteView } from "@/lib/note-list-params";
-import type { Note } from "@/lib/notes";
+import type { Note } from "@/server/notes";
 
 // 카드형(grid)과 목록형(list)이 같은 카드 모양을 쓰고, 글자 크기와 요약 길이만 다르다.
 const styles = {

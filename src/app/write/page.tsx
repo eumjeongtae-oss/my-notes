@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 
-import { getNote } from "@/lib/notes";
+import { getNote } from "@/server/notes";
 
 import { NoteEditor } from "./_components/note-editor";
 

@@ -1,0 +1,34 @@
+# 개발용 로컬 MySQL. 실행: docker compose up -d / 중지: docker compose down
+# 값은 같은 폴더의 .env에서 읽어온다 (.env.example 참고)
+services:
+  mysql:
+    image: mysql:8.4
+    container_name: my-notes-mysql
+    environment:
+      MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD}
+      MYSQL_DATABASE: ${MYSQL_DATABASE}
+      TZ: UTC
+    ports:
+      # 내 컴퓨터의 3306 포트 → 컨테이너의 3306 포트
+      - "3306:3306"
+    volumes:
+      # 컨테이너를 지워도 데이터가 남도록 이름 있는 볼륨에 저장한다
+      - mysql-data:/var/lib/mysql
+    # MySQL이 실제로 접속을 받을 수 있는 상태인지 주기적으로 확인한다.
+    # 127.0.0.1(TCP)로 확인해야 첫 실행 때 초기화용 임시 서버(네트워크 차단)를 준비 완료로 착각하지 않는다.
+    healthcheck:
+      test:
+        [
+          "CMD",
+          "mysqladmin",
+          "ping",
+          "-h",
+          "127.0.0.1",
+          "-p${MYSQL_ROOT_PASSWORD}",
+        ]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+volumes:
+  mysql-data:

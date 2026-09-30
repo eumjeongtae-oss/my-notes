@@ -4,8 +4,18 @@
 
 velog 형식의 화면으로 나만 보는 개인 마크다운 노트 앱. 계획과 진행 상황은 `docs/roadmap.md`에 있다.
 
+## 기술 스택
+
+- Next.js 16 (App Router), React 19, TypeScript, Tailwind CSS 4, pnpm
+- DB는 MySQL 8, ORM은 Prisma다 (팀 프로젝트와 같은 스택이라 선택. 다른 DB나 ORM을 제안하지 않는다)
+- 개발용 MySQL은 Docker Compose로 로컬에서 띄운다
+
 ## 명령어
 
+- `docker compose up -d --wait`: 로컬 MySQL 실행 (`docker compose down`으로 중지, `down -v`는 데이터까지 삭제). 처음에는 `.env.example`을 복사해 `.env`를 만든다
+- `pnpm prisma migrate dev --name 변경내용`: `schema.prisma` 변경을 마이그레이션으로 만들고 DB에 반영. 이후 `pnpm prisma generate`로 클라이언트 코드 재생성 (Prisma 7은 자동 생성하지 않음)
+- `pnpm prisma db seed`: 개발용 예시 데이터로 초기화 (`prisma/seed.ts`, 기존 데이터 삭제됨)
+- `pnpm prisma studio`: 브라우저에서 DB 내용 보기
 - `pnpm dev`: 개발 서버 (http://localhost:3000)
 - `pnpm build`: 프로덕션 빌드
 - `pnpm lint`: ESLint
@@ -22,7 +32,12 @@ velog 형식의 화면으로 나만 보는 개인 마크다운 노트 앱. 계�
   - 한 라우트(그룹)에서만 쓰면 그 폴더의 `_components/`에 둔다 (예: `src/app/(main)/_components/header.tsx`). `_`로 시작하는 폴더는 라우팅에서 제외된다
   - 여러 라우트에서 같이 쓰면 `src/components/`에 둔다 (예: `markdown-preview.tsx`)
   - 한 곳에서만 쓰던 컴포넌트를 다른 라우트에서도 쓰게 되면 `src/components/`로 옮긴다
-- `src/lib/notes.ts`: 노트 데이터 접근 계층. 화면은 여기 함수만 호출하고 DB를 직접 건드리지 않는다
+- `prisma/schema.prisma`: DB 설계도(모델). 설정은 `prisma7.config.ts`, 생성 코드는 `src/generated/prisma`(git 제외)
+- `src/server/`: **서버 전용 코드** (DB 접근). 클라이언트 컴포넌트에서 import하지 않는다
+  - `db.ts`: 앱 전체가 쓰는 Prisma 클라이언트 하나 (`server-only`, 개발 환경 SQL 로그)
+  - `prisma-client.ts`: Prisma 클라이언트를 만드는 방법 (앱과 seed가 공유)
+  - `notes.ts`: 노트 데이터 접근 계층. 화면은 여기 함수만 호출하고 `prisma`를 직접 쓰지 않는다
+- `src/lib/`: 서버와 브라우저 어디서나 쓰는 순수 함수 (`format.ts`, `markdown.ts` 등)
 
 ## 규칙
 

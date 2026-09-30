@@ -2,7 +2,7 @@ import { LayoutGrid, LayoutList } from "lucide-react";
 import Link from "next/link";
 
 import { noteListHref, type NoteView } from "@/lib/note-list-params";
-import type { NoteSort } from "@/lib/notes";
+import type { NoteSort } from "@/server/notes";
 
 const sortOptions: { value: NoteSort; label: string }[] = [
   { value: "latest", label: "최신순" },

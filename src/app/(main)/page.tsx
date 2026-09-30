@@ -1,5 +1,5 @@
 import { parseSort, parseView } from "@/lib/note-list-params";
-import { getNotes } from "@/lib/notes";
+import { getNotes } from "@/server/notes";
 
 import { EmptyNotes } from "./_components/empty-notes";
 import { NoteCard } from "./_components/note-card";
