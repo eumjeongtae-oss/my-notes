@@ -1,0 +1,2 @@
+# 모든 텍스트 파일의 줄바꿈을 LF로 통일한다 (윈도우 autocrlf, Prettier, 리눅스 서버와 일치)
+* text=auto eol=lf
