@@ -13,9 +13,7 @@ const notes: Note[] = [
   {
     id: "1",
     title: "my-notes 시작하기",
-    content: `# my-notes 시작하기
-
-노션처럼 **나만 보는** 마크다운 노트 앱이다.
+    content: `노션처럼 **나만 보는** 마크다운 노트 앱이다.
 
 ## 할 일
 
@@ -37,9 +35,7 @@ const notes: Note[] = [
   {
     id: "2",
     title: "서버 컴포넌트 정리",
-    content: `# 서버 컴포넌트 정리
-
-- App Router의 컴포넌트는 **기본이 서버 컴포넌트**다.
+    content: `- App Router의 컴포넌트는 **기본이 서버 컴포넌트**다.
 - 상태, 이벤트 핸들러, 브라우저 API가 필요하면 파일 맨 위에 \`"use client"\`를 붙인다.
 - \`"use client"\`는 가능한 한 **잎사귀(말단) 컴포넌트**에만 붙인다.
 
@@ -57,9 +53,7 @@ export function Counter() {
   {
     id: "3",
     title: "Tailwind 자주 쓰는 클래스",
-    content: `# Tailwind 자주 쓰는 클래스
-
-> 클래스에 마우스를 올리면 Tailwind CSS IntelliSense가 실제 CSS를 보여준다.
+    content: `> 클래스에 마우스를 올리면 Tailwind CSS IntelliSense가 실제 CSS를 보여준다.
 
 - 레이아웃: \`flex\`, \`grid\`, \`gap-4\`, \`items-center\`
 - 여백: \`p-4\`, \`px-2\`, \`mt-8\`
