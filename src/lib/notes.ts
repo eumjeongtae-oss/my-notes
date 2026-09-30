@@ -64,9 +64,15 @@ export function Counter() {
   },
 ];
 
-export async function getNotes(): Promise<Note[]> {
+export type NoteSort = "latest" | "oldest";
+
+// 2단계에서는 DB 쿼리의 ORDER BY updated_at DESC / ASC로 바뀐다.
+export async function getNotes({
+  sort = "latest",
+}: { sort?: NoteSort } = {}): Promise<Note[]> {
+  const direction = sort === "latest" ? -1 : 1;
   return [...notes].sort(
-    (a, b) => b.updatedAt.getTime() - a.updatedAt.getTime(),
+    (a, b) => direction * (a.updatedAt.getTime() - b.updatedAt.getTime()),
   );
 }
 
