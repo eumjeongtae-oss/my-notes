@@ -1,0 +1,6 @@
+# 이 저장소는 모노레포다. apps/ 안의 폴더 하나하나가 각자 package.json을 가진 앱이다.
+#   apps/web: 프론트 (Next.js, 포트 3000)
+#   apps/api: 백엔드 (Next.js, 포트 4000)
+# 루트에서 pnpm install을 한 번 하면 모든 앱의 라이브러리가 설치된다.
+packages:
+  - "apps/*"
