@@ -12,6 +12,7 @@ velog 형식의 화면으로 나만 보는 개인 마크다운 노트 앱. 계�
 
 ## 명령어
 
+- `docker compose up -d --wait`: 로컬 MySQL 실행 (`docker compose down`으로 중지, `down -v`는 데이터까지 삭제). 처음에는 `.env.example`을 복사해 `.env`를 만든다
 - `pnpm dev`: 개발 서버 (http://localhost:3000)
 - `pnpm build`: 프로덕션 빌드
 - `pnpm lint`: ESLint
