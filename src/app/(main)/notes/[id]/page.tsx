@@ -3,13 +3,8 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 
 import { MarkdownPreview } from "@/components/markdown-preview";
+import { formatDate } from "@/lib/format";
 import { getNote } from "@/lib/notes";
-
-const dateFormat = new Intl.DateTimeFormat("ko-KR", {
-  year: "numeric",
-  month: "long",
-  day: "numeric",
-});
 
 // 브라우저 탭 제목을 노트 제목으로 바꾼다.
 export async function generateMetadata({
@@ -36,7 +31,7 @@ export default async function NotePage({ params }: PageProps<"/notes/[id]">) {
 
       <div className="mt-8 flex items-center justify-between text-zinc-500">
         <time dateTime={note.updatedAt.toISOString()}>
-          {dateFormat.format(note.updatedAt)}
+          {formatDate(note.updatedAt)}
         </time>
         <Link
           href={`/write?id=${note.id}`}

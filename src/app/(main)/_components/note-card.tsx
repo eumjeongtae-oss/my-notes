@@ -1,14 +1,9 @@
 import Link from "next/link";
 
+import { formatDate } from "@/lib/format";
 import { getExcerpt } from "@/lib/markdown";
 import type { NoteView } from "@/lib/note-list-params";
 import type { Note } from "@/lib/notes";
-
-const dateFormat = new Intl.DateTimeFormat("ko-KR", {
-  year: "numeric",
-  month: "long",
-  day: "numeric",
-});
 
 // 카드형(grid)과 목록형(list)이 같은 카드 모양을 쓰고, 글자 크기와 요약 길이만 다르다.
 const styles = {
@@ -49,7 +44,7 @@ export function NoteCard({
         </p>
       </div>
       <div className={`border-t border-zinc-100 text-zinc-500 ${style.footer}`}>
-        {dateFormat.format(note.updatedAt)}
+        {formatDate(note.updatedAt)}
       </div>
     </Link>
   );

@@ -30,6 +30,7 @@ velog 형식의 화면으로 나만 보는 개인 마크다운 노트 앱. 계�
 - 스타일은 Tailwind 클래스로만 작성한다. 마크다운 본문은 `prose`(typography 플러그인)를 쓴다
 - import 경로는 `@/` 별칭을 쓴다. 같은 폴더나 `_components/`는 `./`로 쓴다
 - import 순서: 외부 패키지 → `@/` → `./`, 그룹 사이에 빈 줄
+- 날짜 표시는 `src/lib/format.ts`의 `formatDate`를 쓴다. `Intl.DateTimeFormat`을 직접 만들지 않는다 (서버 시간대가 UTC라 `timeZone: "Asia/Seoul"` 지정이 필요)
 - 브랜치는 `feat/...`, `fix/...`, `chore/...`로 따고 `main`에 합친다
 - 커밋 메시지는 Conventional Commits 형식으로 쓰고 내용은 한국어로 쓴다 (예: `feat: 노트 목록 사이드바 추가`)
 
