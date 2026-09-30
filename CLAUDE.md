@@ -16,7 +16,8 @@
 
 ## 구조
 
-- `src/app/(notes)/`: 사이드바가 있는 화면들 (라우트 그룹이라 URL에는 나타나지 않음)
+- `src/app/(main)/`: 헤더가 있는 화면들 (홈, 읽기). 라우트 그룹이라 URL에는 나타나지 않음
+- 화면은 velog 모티브: 카드 목록 홈, 읽기 페이지, 헤더 없는 전체 화면 글쓰기(`/write`)
 - `src/components/`: 화면 컴포넌트 (파일명은 kebab-case, export는 named export)
 - `src/lib/notes.ts`: 노트 데이터 접근 계층. 화면은 여기 함수만 호출하고 DB를 직접 건드리지 않는다
 
