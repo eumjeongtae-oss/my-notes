@@ -1,7 +1,5 @@
-// This is your Prisma schema file,
-// learn more about it in the docs: https://pris.ly/d/prisma-schema
-
-// Get a free hosted Postgres database in seconds: `npx create-db`
+// DB 설계도. 모델을 바꾼 뒤 `pnpm prisma migrate dev --name 변경내용`으로 DB에 반영한다.
+// 코드에서는 camelCase(createdAt), DB에서는 snake_case(created_at)로 쓴다 (@map, @@map).
 
 generator client {
   provider = "prisma-client"
@@ -10,4 +8,38 @@ generator client {
 
 datasource db {
   provider = "mysql"
+}
+
+// 시리즈: 여러 노트를 순서대로 묶는 단위 (velog 시리즈)
+model Series {
+  id        Int      @id @default(autoincrement())
+  name      String   @unique @db.VarChar(100)
+  // DB 칸이 아니라 "이 시리즈에 속한 노트들"을 꺼내 쓰기 위한 관계 설명
+  notes     Note[]
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  @@map("series")
+}
+
+model Note {
+  id          Int      @id @default(autoincrement())
+  title       String   @db.VarChar(200)
+  // MySQL에서 String의 기본 타입은 VARCHAR(191)이라 긴 본문이 들어가지 않는다.
+  // MediumText는 최대 약 16MB
+  content     String   @db.MediumText
+  // 실제 DB 칸(외래 키). 시리즈에 속하지 않으면 null
+  seriesId    Int?     @map("series_id")
+  // DB 칸이 아니라 seriesId가 Series.id를 가리킨다는 관계 설명.
+  // 시리즈가 삭제되면 노트는 남기고 seriesId만 비운다(SetNull)
+  series      Series?  @relation(fields: [seriesId], references: [id], onDelete: SetNull)
+  // 시리즈 안에서 몇 번째 글인지
+  seriesOrder Int?     @map("series_order")
+  createdAt   DateTime @default(now()) @map("created_at")
+  updatedAt   DateTime @updatedAt @map("updated_at")
+
+  // 인덱스(책 뒤의 찾아보기): 홈 목록 정렬/무한스크롤, 시리즈 안의 순서 조회용
+  @@index([updatedAt, id])
+  @@index([seriesId, seriesOrder])
+  @@map("notes")
 }

@@ -13,6 +13,9 @@ velog 형식의 화면으로 나만 보는 개인 마크다운 노트 앱. 계�
 ## 명령어
 
 - `docker compose up -d --wait`: 로컬 MySQL 실행 (`docker compose down`으로 중지, `down -v`는 데이터까지 삭제). 처음에는 `.env.example`을 복사해 `.env`를 만든다
+- `pnpm prisma migrate dev --name 변경내용`: `schema.prisma` 변경을 마이그레이션으로 만들고 DB에 반영. 이후 `pnpm prisma generate`로 클라이언트 코드 재생성 (Prisma 7은 자동 생성하지 않음)
+- `pnpm prisma db seed`: 개발용 예시 데이터로 초기화 (`prisma/seed.ts`, 기존 데이터 삭제됨)
+- `pnpm prisma studio`: 브라우저에서 DB 내용 보기
 - `pnpm dev`: 개발 서버 (http://localhost:3000)
 - `pnpm build`: 프로덕션 빌드
 - `pnpm lint`: ESLint

@@ -20,6 +20,10 @@ cp .env.example .env
 # 로컬 MySQL 실행 (healthy가 될 때까지 기다린다)
 docker compose up -d --wait
 
+# 테이블 만들고 예시 데이터 넣기
+pnpm prisma migrate dev
+pnpm prisma db seed
+
 pnpm dev
 ```
 
@@ -33,3 +37,5 @@ pnpm dev
 | `docker compose logs mysql` | MySQL 로그 보기                    |
 | `docker compose down`       | MySQL 중지 (데이터는 유지)         |
 | `docker compose down -v`    | MySQL 중지하고 **데이터까지 삭제** |
+| `pnpm prisma studio`        | 브라우저에서 DB 내용 보기          |
+| `pnpm prisma db seed`       | 예시 데이터로 초기화               |
