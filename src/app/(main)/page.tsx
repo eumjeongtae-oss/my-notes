@@ -3,7 +3,6 @@ import { getNotes } from "@/lib/notes";
 
 import { EmptyNotes } from "./_components/empty-notes";
 import { NoteCard } from "./_components/note-card";
-import { NoteListItem } from "./_components/note-list-item";
 import { NoteListOptions } from "./_components/note-list-options";
 
 export default async function HomePage({ searchParams }: PageProps<"/">) {
@@ -43,9 +42,9 @@ export default async function HomePage({ searchParams }: PageProps<"/">) {
           ))}
         </div>
       ) : (
-        <div className="mt-2 divide-y divide-zinc-100">
+        <div className="mt-6 space-y-4">
           {notes.map((note) => (
-            <NoteListItem key={note.id} note={note} />
+            <NoteCard key={note.id} note={note} variant="list" />
           ))}
         </div>
       )}
