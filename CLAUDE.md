@@ -33,7 +33,11 @@ velog 형식의 화면으로 나만 보는 개인 마크다운 노트 앱. 계�
   - 여러 라우트에서 같이 쓰면 `src/components/`에 둔다 (예: `markdown-preview.tsx`)
   - 한 곳에서만 쓰던 컴포넌트를 다른 라우트에서도 쓰게 되면 `src/components/`로 옮긴다
 - `prisma/schema.prisma`: DB 설계도(모델). 설정은 `prisma7.config.ts`, 생성 코드는 `src/generated/prisma`(git 제외)
-- `src/lib/notes.ts`: 노트 데이터 접근 계층. 화면은 여기 함수만 호출하고 DB를 직접 건드리지 않는다
+- `src/server/`: **서버 전용 코드** (DB 접근). 클라이언트 컴포넌트에서 import하지 않는다
+  - `db.ts`: 앱 전체가 쓰는 Prisma 클라이언트 하나 (`server-only`, 개발 환경 SQL 로그)
+  - `prisma-client.ts`: Prisma 클라이언트를 만드는 방법 (앱과 seed가 공유)
+  - `notes.ts`: 노트 데이터 접근 계층. 화면은 여기 함수만 호출하고 `prisma`를 직접 쓰지 않는다
+- `src/lib/`: 서버와 브라우저 어디서나 쓰는 순수 함수 (`format.ts`, `markdown.ts` 등)
 
 ## 규칙
 

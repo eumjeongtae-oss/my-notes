@@ -4,7 +4,7 @@ import { notFound } from "next/navigation";
 
 import { MarkdownPreview } from "@/components/markdown-preview";
 import { formatDate } from "@/lib/format";
-import { getNote } from "@/lib/notes";
+import { getNote } from "@/server/notes";
 
 // 브라우저 탭 제목을 노트 제목으로 바꾼다.
 export async function generateMetadata({

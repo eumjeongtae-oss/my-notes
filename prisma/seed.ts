@@ -10,7 +10,7 @@ import "dotenv/config";
 import { readFileSync } from "node:fs";
 import path from "node:path";
 
-import { createPrismaClient } from "../src/lib/prisma-client";
+import { createPrismaClient } from "../src/server/prisma-client";
 
 const prisma = createPrismaClient();
 
