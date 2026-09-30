@@ -4,6 +4,8 @@
 
 velog 형식의 화면으로 나만 보는 개인 마크다운 노트 앱. 계획과 진행 상황은 `docs/roadmap.md`에 있다.
 
+화면에 보이는 사이트 이름은 **차곡 (Chagok)** 이다. 프로젝트(레포, 폴더, 패키지) 이름은 그대로 `my-notes`다.
+
 ## 아키텍처
 
 회사처럼 프론트와 백엔드를 나눈다. **pnpm workspace 모노레포**로 저장소는 하나, 앱은 둘이다.
@@ -44,6 +46,7 @@ velog 형식의 화면으로 나만 보는 개인 마크다운 노트 앱. 계�
 ## 구조: apps/web (프론트)
 
 - `src/app/(main)/`: 헤더가 있는 화면들 (홈, 읽기). 라우트 그룹이라 URL에는 나타나지 않음
+- `src/app/icon.svg`: 파비콘 (Next.js 파일 규칙). 헤더 로고 `(main)/_components/logo.tsx`와 같은 모양이라 함께 고친다
 - 화면은 velog 모티브: 카드 목록 홈, 읽기 페이지, 헤더 없는 전체 화면 글쓰기(`/write`, 왼쪽 에디터 + 오른쪽 미리보기)
 - 컴포넌트 위치는 colocation 방식이다 (파일명은 kebab-case, export는 named export)
   - 한 라우트(그룹)에서만 쓰면 그 폴더의 `_components/`에 둔다 (예: `src/app/(main)/_components/header.tsx`). `_`로 시작하는 폴더는 라우팅에서 제외된다

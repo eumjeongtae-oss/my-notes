@@ -11,8 +11,8 @@ const pretendard = localFont({
 });
 
 export const metadata: Metadata = {
-  // 하위 페이지가 title을 정하면 "노트 제목 | my-notes" 형태가 된다.
-  title: { default: "my-notes", template: "%s | my-notes" },
+  // 하위 페이지가 title을 정하면 "노트 제목 | 차곡" 형태가 된다.
+  title: { default: "차곡", template: "%s | 차곡" },
   description: "나만 보는 마크다운 노트",
 };
 
