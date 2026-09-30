@@ -1,7 +1,24 @@
+import type { Metadata } from "next";
+import Link from "next/link";
 import { notFound } from "next/navigation";
 
-import { NoteEditor } from "@/components/note-editor";
+import { MarkdownPreview } from "@/components/markdown-preview";
 import { getNote } from "@/lib/notes";
+
+const dateFormat = new Intl.DateTimeFormat("ko-KR", {
+  year: "numeric",
+  month: "long",
+  day: "numeric",
+});
+
+// 브라우저 탭 제목을 노트 제목으로 바꾼다.
+export async function generateMetadata({
+  params,
+}: PageProps<"/notes/[id]">): Promise<Metadata> {
+  const { id } = await params;
+  const note = await getNote(id);
+  return { title: note?.title };
+}
 
 export default async function NotePage({ params }: PageProps<"/notes/[id]">) {
   const { id } = await params;
@@ -11,7 +28,28 @@ export default async function NotePage({ params }: PageProps<"/notes/[id]">) {
     notFound();
   }
 
-  // key가 바뀌면 React가 컴포넌트를 새로 만든다.
-  // 다른 노트로 이동했을 때 이전 노트의 입력 상태가 남지 않게 하기 위함이다.
-  return <NoteEditor key={note.id} note={note} />;
+  return (
+    <div className="mx-auto max-w-3xl px-4 py-16">
+      <h1 className="text-4xl leading-tight font-extrabold break-keep sm:text-5xl">
+        {note.title}
+      </h1>
+
+      <div className="mt-8 flex items-center justify-between text-zinc-500">
+        <time dateTime={note.updatedAt.toISOString()}>
+          {dateFormat.format(note.updatedAt)}
+        </time>
+        <Link
+          href={`/write?id=${note.id}`}
+          className="text-sm hover:text-zinc-900"
+        >
+          수정
+        </Link>
+      </div>
+
+      <hr className="mt-6 mb-12 border-zinc-100" />
+
+      {/* prose-lg: 본문 18px, 줄 간격 약 1.8. 오래 읽는 화면이라 한 단계 크게 쓴다 */}
+      <MarkdownPreview content={note.content} className="prose-lg" />
+    </div>
+  );
 }

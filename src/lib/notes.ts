@@ -2,6 +2,8 @@
 // 지금은 메모리의 가짜 데이터를 돌려주지만, 2단계에서 이 파일 안만 DB 조회로 바꾼다.
 // 화면 코드는 이 함수들만 호출하므로 수정할 필요가 없다.
 
+import { cache } from "react";
+
 export type Note = {
   id: string;
   title: string;
@@ -76,6 +78,8 @@ export async function getNotes({
   );
 }
 
-export async function getNote(id: string): Promise<Note | undefined> {
+// cache: 한 번의 요청 안에서 같은 id로 여러 번 호출해도 실제 조회는 한 번만 한다.
+// (읽기 페이지에서 generateMetadata와 본문이 같은 노트를 각각 가져오기 때문)
+export const getNote = cache(async (id: string): Promise<Note | undefined> => {
   return notes.find((note) => note.id === id);
-}
+});
