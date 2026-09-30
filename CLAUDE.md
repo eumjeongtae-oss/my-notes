@@ -4,6 +4,15 @@
 
 velog 형식의 화면으로 나만 보는 개인 마크다운 노트 앱. 계획과 진행 상황은 `docs/roadmap.md`에 있다.
 
+## 아키텍처
+
+회사처럼 프론트와 백엔드를 나눈다. **pnpm workspace 모노레포**로 저장소는 하나, 앱은 둘이다.
+
+- `apps/web`: 프론트 Next.js (포트 3000). 화면만 담당하고 **DB나 백엔드 코드를 import하지 않는다.** 데이터는 오직 REST API로 주고받는다
+- `apps/api`: 백엔드 Next.js (포트 4000). Route Handler로 REST API를 만들고 Prisma로 MySQL에 접근한다
+
+> 🚧 전환 중 (`chore/monorepo` 브랜치): 아래 "구조"의 경로는 아직 단일 앱(`src/`) 기준이다. 옮기면서 갱신한다.
+
 ## 기술 스택
 
 - Next.js 16 (App Router), React 19, TypeScript, Tailwind CSS 4, pnpm
