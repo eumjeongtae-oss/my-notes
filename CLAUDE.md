@@ -81,7 +81,7 @@ velog 형식의 화면으로 나만 보는 개인 마크다운 노트 앱. 계�
   - 요청 본문은 `parseBody(request, 스키마)`(`src/lib/parse-body.ts`)로 읽고 검사한다. URL의 id도 zod 스키마(`noteIdSchema`)로 검사한다
   - 검색(`q`)은 제목과 본문의 LIKE 검색이다. `%`, `_`는 LIKE의 특수 기호라 `escapeLike`로 이스케이프한다 (안 하면 "%" 검색에 모든 노트가 나옴)
   - 목록은 커서 페이지네이션이다: `?limit=20&cursor=...` → `{ items, nextCursor }`. 커서는 마지막 노트의 `createdAt`과 `id`를 base64url로 묶은 불투명한 문자열 (`server/notes/cursor.ts`)
-  - 현재 API: `GET /api/health`, `GET /api/notes?q=&sort=latest|oldest&limit=&cursor=`, `POST /api/notes`, `GET /api/notes/:id`, `PATCH /api/notes/:id`, `DELETE /api/notes/:id`
+  - 현재 API: `GET /api/health`, `GET /api/notes?q=&sort=latest|oldest&limit=&cursor=`, `POST /api/notes`, `GET /api/notes/:id`, `PATCH /api/notes/:id`, `DELETE /api/notes/:id`, `GET /api/series`, `GET /api/series/:id`
 - `requests.http`: API를 직접 호출해 보는 파일 (VS Code REST Client). API를 추가하면 여기에도 예시 요청을 추가한다
 - `prisma/schema.prisma`: DB 설계도(모델). 설정은 `prisma7.config.ts`, 생성 코드는 `src/generated/prisma`(git 제외)
 - `prisma/seed.ts`, `prisma/seed-notes/*.md`: 개발용 예시 데이터
@@ -91,7 +91,10 @@ velog 형식의 화면으로 나만 보는 개인 마크다운 노트 앱. 계�
   - `prisma-client.ts`: Prisma 클라이언트를 만드는 방법 (앱과 seed가 공유)
   - `notes/service.ts`: 노트 데이터 접근 (서비스). DB에서 무엇을 가져올지만 알고 HTTP는 모른다
   - `notes/schema.ts`: 노트 API가 받는 입력 규칙 (zod). 숫자 제한은 `schema.prisma`와 맞춘다
+  - `series/service.ts`, `series/schema.ts`: 묶음(series) 조회
   - 도메인(notes, series 등)마다 폴더를 두고 `service.ts`와 `schema.ts`로 나눈다
+  - **목록에서 관계된 개수나 데이터를 반복문으로 하나씩 조회하지 않는다 (N+1 문제).** `_count`, `select`/`include`로 한 번에 가져온다
+  - URL id 검사는 `idSchema("노트")`처럼 `src/lib/id-schema.ts`를 쓴다
 
 ## 규칙
 

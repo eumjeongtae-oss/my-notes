@@ -93,3 +93,9 @@ GET {{baseUrl}}/api/notes?q=docker
 
 ### 검색: LIKE 특수 기호(%)도 글자 그대로 찾는다
 GET {{baseUrl}}/api/notes?q=%25
+
+### 묶음 목록 (화면에서는 "묶음", 코드에서는 series)
+GET {{baseUrl}}/api/series
+
+### 묶음 하나와 속한 노트들 (순서대로)
+GET {{baseUrl}}/api/series/2
