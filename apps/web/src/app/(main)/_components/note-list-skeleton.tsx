@@ -28,7 +28,8 @@ const cardStyles = {
   },
 } satisfies Record<NoteView, Record<string, string | string[]>>;
 
-function CardSkeleton({ view }: { view: NoteView }) {
+// 무한스크롤에서 다음 묶음을 불러오는 동안에도 목록 아래에 이 카드 뼈대를 보여준다
+export function CardSkeleton({ view }: { view: NoteView }) {
   const style = cardStyles[view];
   return (
     <div className="flex flex-col overflow-hidden rounded-xl bg-white shadow-sm ring-1 ring-zinc-200">
@@ -67,7 +68,7 @@ export function NoteListSkeleton({
       <div className="flex items-center justify-between">
         <h1 className="flex items-center gap-2 text-2xl font-bold">
           전체 노트
-          <span className="inline-block h-5 w-6 animate-pulse rounded bg-zinc-100" />
+          <span className="inline-block h-5 w-8 animate-pulse rounded bg-zinc-100" />
         </h1>
         <NoteListOptions view={view} sort={sort} />
       </div>

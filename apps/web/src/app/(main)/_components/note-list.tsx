@@ -2,11 +2,12 @@ import { getNotes } from "@/api/notes";
 import type { NoteSort, NoteView } from "@/lib/note-list-params";
 
 import { EmptyNotes } from "./empty-notes";
-import { NoteCard } from "./note-card";
+import { InfiniteNoteList } from "./infinite-note-list";
 import { NoteListOptions } from "./note-list-options";
 
-// 홈의 노트 목록. API를 기다리는 부분이라 홈 page.tsx에서 <Suspense>로 감싼다.
-// 기다리는 동안에는 같은 모양의 NoteListSkeleton이 보인다.
+// 홈의 노트 목록. 첫 묶음은 서버에서 가져와 빠르게 그리고,
+// 그다음 묶음부터는 InfiniteNoteList(클라이언트)가 스크롤에 맞춰 가져온다.
+// API를 기다리는 부분이라 홈 page.tsx에서 <Suspense>로 감싼다.
 export async function NoteList({
   view,
   sort,
@@ -14,9 +15,9 @@ export async function NoteList({
   view: NoteView;
   sort: NoteSort;
 }) {
-  const notes = await getNotes(sort);
+  const firstPage = await getNotes(sort);
 
-  if (notes.length === 0) {
+  if (firstPage.items.length === 0) {
     return (
       <div className="mx-auto max-w-5xl px-4">
         <EmptyNotes />
@@ -30,29 +31,17 @@ export async function NoteList({
       className={`mx-auto px-4 py-10 ${view === "grid" ? "max-w-5xl" : "max-w-3xl"}`}
     >
       <div className="flex items-center justify-between">
+        {/* 전체 개수는 첫 묶음에만 온다 (백엔드가 첫 묶음에서만 COUNT를 한다) */}
         <h1 className="text-2xl font-bold">
           전체 노트{" "}
           <span className="text-base font-medium text-zinc-400">
-            {notes.length}
+            {firstPage.total}
           </span>
         </h1>
         <NoteListOptions view={view} sort={sort} />
       </div>
 
-      {view === "grid" ? (
-        // 화면 폭에 따라 한 줄에 1개 → 2개(sm, 640px 이상) → 3개(lg, 1024px 이상)
-        <div className="mt-6 grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3">
-          {notes.map((note) => (
-            <NoteCard key={note.id} note={note} />
-          ))}
-        </div>
-      ) : (
-        <div className="mt-6 space-y-4">
-          {notes.map((note) => (
-            <NoteCard key={note.id} note={note} variant="list" />
-          ))}
-        </div>
-      )}
+      <InfiniteNoteList view={view} sort={sort} initialPage={firstPage} />
     </div>
   );
 }

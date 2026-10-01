@@ -58,7 +58,11 @@ velog 형식의 화면으로 나만 보는 개인 마크다운 노트 앱. 계�
 - `src/api/`: 백엔드 API 호출 함수. 화면은 `fetch`를 직접 쓰지 않고 여기 함수(`getNote` 등)만 호출한다
   - `client.ts`: 공통 호출 함수 (`API_URL` 붙이기, 실패 시 `ApiError`)
   - `notes.ts`: 노트 API. JSON의 날짜 문자열을 `Date`로 바꿔서 돌려준다
-  - 지금은 `server-only`(서버 컴포넌트 전용). 브라우저용 호출은 React Query 도입 때 추가
+  - `client.ts`, `notes.ts`는 `server-only`(서버 컴포넌트 전용)
+  - `types.ts`: 응답 타입과 날짜 변환 (서버용, 브라우저용 공용)
+  - `browser.ts`: 브라우저(클라이언트 컴포넌트)에서 부르는 함수. `NEXT_PUBLIC_API_URL` 사용
+  - `query-keys.ts`: React Query 이름표(query key). 문자열을 직접 쓰지 않고 `noteKeys`를 쓴다
+  - **노트를 저장, 수정, 삭제한 뒤에는 `queryClient.removeQueries({ queryKey: noteKeys.lists() })`로 홈 목록 기억을 지운다.** 안 지우면 홈에 예전 목록이 보인다
 - `src/lib/`: 서버와 브라우저 어디서나 쓰는 순수 함수 (`format.ts`: 날짜 표시, `note-list-params.ts`: 홈 보기 방식과 정렬 URL 해석)
 
 ## 구조: apps/api (백엔드)
@@ -73,7 +77,8 @@ velog 형식의 화면으로 나만 보는 개인 마크다운 노트 앱. 계�
   - 400, 404처럼 예상한 에러는 각 API가 직접 응답한다
   - 목록 API는 배열 대신 `{ items }` 객체로 응답한다 (무한스크롤 때 `nextCursor`를 추가할 수 있게)
   - 요청 본문은 `parseBody(request, 스키마)`(`src/lib/parse-body.ts`)로 읽고 검사한다. URL의 id도 zod 스키마(`noteIdSchema`)로 검사한다
-  - 현재 API: `GET /api/health`, `GET /api/notes?sort=latest|oldest`, `POST /api/notes`, `GET /api/notes/:id`, `PATCH /api/notes/:id`, `DELETE /api/notes/:id`
+  - 목록은 커서 페이지네이션이다: `?limit=20&cursor=...` → `{ items, nextCursor }`. 커서는 마지막 노트의 `createdAt`과 `id`를 base64url로 묶은 불투명한 문자열 (`server/notes/cursor.ts`)
+  - 현재 API: `GET /api/health`, `GET /api/notes?sort=latest|oldest&limit=&cursor=`, `POST /api/notes`, `GET /api/notes/:id`, `PATCH /api/notes/:id`, `DELETE /api/notes/:id`
 - `requests.http`: API를 직접 호출해 보는 파일 (VS Code REST Client). API를 추가하면 여기에도 예시 요청을 추가한다
 - `prisma/schema.prisma`: DB 설계도(모델). 설정은 `prisma7.config.ts`, 생성 코드는 `src/generated/prisma`(git 제외)
 - `prisma/seed.ts`, `prisma/seed-notes/*.md`: 개발용 예시 데이터

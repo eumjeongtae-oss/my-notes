@@ -8,3 +8,12 @@
 body {
   @apply bg-white font-sans text-zinc-900;
 }
+
+/* Tailwind 4는 버튼의 기본 커서를 default(화살표)로 바꿨다. 예전처럼 손가락 모양으로 되돌린다.
+   비활성화된 버튼은 누를 수 없으니 제외한다 (각 버튼의 disabled:cursor-not-allowed가 적용됨) */
+@layer base {
+  button:not(:disabled),
+  [role="button"]:not(:disabled) {
+    cursor: pointer;
+  }
+}

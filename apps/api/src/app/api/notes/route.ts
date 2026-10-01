@@ -1,31 +1,30 @@
 import { parseBody } from "@/lib/parse-body";
 import { withErrorHandling } from "@/lib/with-error-handling";
-import { createNoteSchema } from "@/server/notes/schema";
-import { createNote, listNotes, type NoteSort } from "@/server/notes/service";
+import { createNoteSchema, listNotesQuerySchema } from "@/server/notes/schema";
+import { createNote, listNotes } from "@/server/notes/service";
 
-const SORTS: NoteSort[] = ["latest", "oldest"];
-
-// GET /api/notes?sort=latest|oldest
-// 노트 목록을 조회한다. 본문 대신 요약(excerpt)만 담는다.
-//   200: { items: [...] }
-//   400: sort 값이 latest, oldest가 아님
+// GET /api/notes?sort=latest|oldest&limit=20&cursor=...
+// 노트 목록을 한 묶음씩 조회한다 (커서 페이지네이션). 본문 대신 요약(excerpt)만 담는다.
+//   200: { items: [...], nextCursor: "..." | null, total?: number }
+//        total(전체 개수)은 첫 묶음(cursor 없음)에만 있다
+//        다음 묶음은 nextCursor를 cursor에 그대로 넣어 요청한다. null이면 마지막 묶음
+//   400: sort, limit, cursor가 규칙에 맞지 않음
 //
-// 배열 대신 { items } 객체로 감싸는 이유:
-// 무한스크롤을 붙일 때 { items, nextCursor }처럼 필드를 "추가"만 하면 되도록.
+// 처음에 배열 대신 { items }로 감싸둔 덕분에, 기존 응답에 nextCursor를 "추가"만 했다.
 export const GET = withErrorHandling(async (request: Request) => {
-  const sort = new URL(request.url).searchParams.get("sort") ?? "latest";
-
+  // URL 쿼리를 객체로 바꿔서 zod 규칙으로 검사한다 (?limit=20 → { limit: "20" } → 숫자 20)
   // 화면은 이상한 값을 조용히 기본값으로 바꾸지만,
   // API는 호출하는 쪽이 실수를 바로 알 수 있게 400으로 알려준다.
-  if (!SORTS.includes(sort as NoteSort)) {
+  const query = Object.fromEntries(new URL(request.url).searchParams);
+  const parsed = listNotesQuerySchema.safeParse(query);
+  if (!parsed.success) {
     return Response.json(
-      { message: `sort는 ${SORTS.join(", ")} 중 하나여야 합니다.` },
+      { message: parsed.error.issues[0].message },
       { status: 400 },
     );
   }
 
-  const items = await listNotes({ sort: sort as NoteSort });
-  return Response.json({ items });
+  return Response.json(await listNotes(parsed.data));
 });
 
 // POST /api/notes

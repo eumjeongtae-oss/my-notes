@@ -47,7 +47,8 @@ export function Providers({ children }: { children: React.ReactNode }) {
           저장 버튼이 아래쪽에 있어서 아래 가운데에 띄운다 */}
       <Toaster position="bottom-center" richColors />
       {/* 개발할 때만 화면 구석에 나타난다. 운영 빌드에는 자동으로 빠진다 */}
-      <ReactQueryDevtools />
+      {/* 오른쪽 아래는 "맨 위로" 버튼 자리라 왼쪽 아래에 둔다 */}
+      <ReactQueryDevtools buttonPosition="bottom-left" />
     </QueryClientProvider>
   );
 }
