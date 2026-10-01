@@ -41,8 +41,8 @@ velog 형식의 화면으로 나만 보는 개인 마크다운 노트 앱. 계�
 앱마다 자기 `.env`를 가진다 (회사에서 레포마다 따로 있는 것과 같다). 각 폴더의 `.env.example`을 복사해서 만든다.
 
 - 루트 `.env`: MySQL 컨테이너 설정 (`compose.yaml`이 읽음)
-- `apps/api/.env`: `DATABASE_URL` (DB 주소는 백엔드만 안다)
-- `apps/web/.env`: `API_URL` (백엔드 주소). 프론트는 DB 정보를 갖지 않는다
+- `apps/api/.env`: `DATABASE_URL` (DB 주소는 백엔드만 안다), `CORS_ORIGINS` (브라우저 호출을 허락할 프론트 주소)
+- `apps/web/.env`: `API_URL` (서버 컴포넌트용 백엔드 주소), `NEXT_PUBLIC_API_URL` (브라우저용 백엔드 주소, 누구나 볼 수 있으니 비밀 값 금지). 프론트는 DB 정보를 갖지 않는다
 
 ## 구조: apps/web (프론트)
 
@@ -62,6 +62,7 @@ velog 형식의 화면으로 나만 보는 개인 마크다운 노트 앱. 계�
 
 ## 구조: apps/api (백엔드)
 
+- `src/proxy.ts`: 모든 `/api` 요청이 먼저 거치는 곳 (Next 16의 Proxy, 예전 이름 middleware). CORS 허가 헤더를 붙이고 사전 확인(OPTIONS)에 204로 답한다
 - `src/app/api/**/route.ts`: REST API (Route Handler). 폴더 경로가 API 주소, export한 함수 이름(`GET`, `POST` 등)이 HTTP 메서드
   - **HTTP만 담당**한다: 요청 값 꺼내기, 입력 검사, 상태 코드(200/400/404) 결정. `prisma`를 직접 쓰지 않고 `src/server/*.ts` 함수를 호출한다
   - URL 값은 `Number()`로 바로 바꾸지 말고 문자열 형식부터 검사한다 (`"1e1"`, `"0x13"`도 숫자로 바뀌어 통과함)
