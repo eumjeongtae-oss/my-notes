@@ -1,5 +1,7 @@
 import type { Metadata } from "next";
 import localFont from "next/font/local";
+
+import { Providers } from "./_components/providers";
 import "./globals.css";
 
 // Pretendard는 Google Fonts에 없어서 npm 패키지의 폰트 파일을 직접 불러온다.
@@ -19,7 +21,10 @@ export const metadata: Metadata = {
 export default function RootLayout({ children }: LayoutProps<"/">) {
   return (
     <html lang="ko" className={`${pretendard.variable} h-full antialiased`}>
-      <body className="h-full">{children}</body>
+      <body className="h-full">
+        {/* React Query를 앱 전체에서 쓸 수 있게 감싼다 */}
+        <Providers>{children}</Providers>
+      </body>
     </html>
   );
 }

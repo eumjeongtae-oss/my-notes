@@ -17,6 +17,8 @@ velog 형식의 화면으로 나만 보는 개인 마크다운 노트 앱. 계�
 ## 기술 스택
 
 - Next.js 16 (App Router), React 19, TypeScript, Tailwind CSS 4, pnpm
+- 프론트에서 브라우저가 API를 부를 때(저장 버튼, 무한스크롤, 검색)는 React Query(TanStack Query v5). 첫 화면은 서버 컴포넌트에서 조회한다
+- 백엔드 입력 검증은 zod 4
 - DB는 MySQL 8, ORM은 Prisma다 (팀 프로젝트와 같은 스택이라 선택. 다른 DB나 ORM을 제안하지 않는다)
 - 개발용 MySQL은 Docker Compose로 로컬에서 띄운다
 
@@ -39,12 +41,13 @@ velog 형식의 화면으로 나만 보는 개인 마크다운 노트 앱. 계�
 앱마다 자기 `.env`를 가진다 (회사에서 레포마다 따로 있는 것과 같다). 각 폴더의 `.env.example`을 복사해서 만든다.
 
 - 루트 `.env`: MySQL 컨테이너 설정 (`compose.yaml`이 읽음)
-- `apps/api/.env`: `DATABASE_URL` (DB 주소는 백엔드만 안다)
-- `apps/web/.env`: `API_URL` (백엔드 주소). 프론트는 DB 정보를 갖지 않는다
+- `apps/api/.env`: `DATABASE_URL` (DB 주소는 백엔드만 안다), `CORS_ORIGINS` (브라우저 호출을 허락할 프론트 주소)
+- `apps/web/.env`: `API_URL` (서버 컴포넌트용 백엔드 주소), `NEXT_PUBLIC_API_URL` (브라우저용 백엔드 주소, 누구나 볼 수 있으니 비밀 값 금지). 프론트는 DB 정보를 갖지 않는다
 
 ## 구조: apps/web (프론트)
 
 - `src/app/(main)/`: 헤더가 있는 화면들 (홈, 읽기). 라우트 그룹이라 URL에는 나타나지 않음
+- `src/app/_components/providers.tsx`: React Query Provider (`"use client"`). 루트 `layout.tsx`가 감싼다. 서버는 요청마다, 브라우저는 하나의 QueryClient
 - `src/app/icon.svg`: 파비콘 (Next.js 파일 규칙). 헤더 로고 `(main)/_components/logo.tsx`와 같은 모양이라 함께 고친다
 - 화면은 velog 모티브: 카드 목록 홈, 읽기 페이지, 헤더 없는 전체 화면 글쓰기(`/write`, 왼쪽 에디터 + 오른쪽 미리보기)
 - 컴포넌트 위치는 colocation 방식이다 (파일명은 kebab-case, export는 named export)
@@ -59,21 +62,26 @@ velog 형식의 화면으로 나만 보는 개인 마크다운 노트 앱. 계�
 
 ## 구조: apps/api (백엔드)
 
+- `src/proxy.ts`: 모든 `/api` 요청이 먼저 거치는 곳 (Next 16의 Proxy, 예전 이름 middleware). CORS 허가 헤더를 붙이고 사전 확인(OPTIONS)에 204로 답한다
 - `src/app/api/**/route.ts`: REST API (Route Handler). 폴더 경로가 API 주소, export한 함수 이름(`GET`, `POST` 등)이 HTTP 메서드
   - **HTTP만 담당**한다: 요청 값 꺼내기, 입력 검사, 상태 코드(200/400/404) 결정. `prisma`를 직접 쓰지 않고 `src/server/*.ts` 함수를 호출한다
   - URL 값은 `Number()`로 바로 바꾸지 말고 문자열 형식부터 검사한다 (`"1e1"`, `"0x13"`도 숫자로 바뀌어 통과함)
-  - 에러 응답 형식: `{ "message": "..." }`
+  - 에러 응답 형식: `{ "message": "..." }`. 입력 검증(zod) 실패는 칸별 메시지를 더해 `{ "message", "fieldErrors": { "title": ["..."] } }`
+  - 새로 만들면 201 Created와 `Location` 헤더(새 리소스 주소)로 응답한다
   - **모든 API 함수는 `withErrorHandling`(`src/lib/with-error-handling.ts`)으로 감싼다** (`export const GET = withErrorHandling(async (request) => ...)`). 예상 못 한 에러는 서버 로그에 원인을 남기고 500 `{ message }`로 응답한다. 에러 내용(DB 주소, SQL)을 응답에 넣지 않는다
   - 400, 404처럼 예상한 에러는 각 API가 직접 응답한다
   - 목록 API는 배열 대신 `{ items }` 객체로 응답한다 (무한스크롤 때 `nextCursor`를 추가할 수 있게)
-  - 현재 API: `GET /api/health`, `GET /api/notes?sort=latest|oldest`, `GET /api/notes/:id`
+  - 현재 API: `GET /api/health`, `GET /api/notes?sort=latest|oldest`, `POST /api/notes`, `GET /api/notes/:id`
+- `requests.http`: API를 직접 호출해 보는 파일 (VS Code REST Client). API를 추가하면 여기에도 예시 요청을 추가한다
 - `prisma/schema.prisma`: DB 설계도(모델). 설정은 `prisma7.config.ts`, 생성 코드는 `src/generated/prisma`(git 제외)
 - `prisma/seed.ts`, `prisma/seed-notes/*.md`: 개발용 예시 데이터
 - `src/lib/`: DB와 상관없는 코드 (`markdown.ts`: 목록용 요약문, `with-error-handling.ts`: API 공통 에러 처리)
 - `src/server/`: 서버 전용 코드
   - `db.ts`: 앱 전체가 쓰는 Prisma 클라이언트 하나 (`server-only`, 개발 환경 SQL 로그)
   - `prisma-client.ts`: Prisma 클라이언트를 만드는 방법 (앱과 seed가 공유)
-  - `notes.ts`: 노트 데이터 접근 (서비스). DB에서 무엇을 가져올지만 알고 HTTP는 모른다
+  - `notes/service.ts`: 노트 데이터 접근 (서비스). DB에서 무엇을 가져올지만 알고 HTTP는 모른다
+  - `notes/schema.ts`: 노트 API가 받는 입력 규칙 (zod). 숫자 제한은 `schema.prisma`와 맞춘다
+  - 도메인(notes, series 등)마다 폴더를 두고 `service.ts`와 `schema.ts`로 나눈다
 
 ## 규칙
 

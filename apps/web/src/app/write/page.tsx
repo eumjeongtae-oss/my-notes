@@ -43,6 +43,7 @@ export default async function WritePage({ searchParams }: PageProps<"/write">) {
       initialTitle={note?.title}
       initialContent={note?.content}
       exitHref={note ? `/notes/${note.id}` : "/"}
+      isEditing={note !== undefined}
     />
   );
 }

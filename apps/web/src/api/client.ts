@@ -2,18 +2,10 @@
 // 화면은 fetch를 직접 쓰지 않고 src/api/*.ts의 함수(getNote 등)만 호출한다.
 //
 // server-only: API_URL은 서버에만 있는 환경 변수라서, 지금 함수들은 서버 컴포넌트에서만 쓴다.
-// 브라우저에서 호출하는 함수(저장 버튼 등)는 React Query를 도입할 때 따로 만든다.
+// 브라우저에서 호출하는 함수(저장 버튼 등)는 browser.ts에 있다.
 import "server-only";
 
-// 백엔드가 에러일 때 돌려주는 형식: { message: "..." }
-export class ApiError extends Error {
-  constructor(
-    readonly status: number,
-    message: string,
-  ) {
-    super(message);
-  }
-}
+import { ApiError } from "./errors";
 
 function getApiUrl() {
   const url = process.env.API_URL;
