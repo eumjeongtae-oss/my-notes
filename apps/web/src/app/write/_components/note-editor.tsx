@@ -12,7 +12,7 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useRef, useState } from "react";
 
-import { createNote } from "@/api/browser";
+import { createNote, updateNote } from "@/api/browser";
 import { MarkdownPreview } from "@/components/markdown-preview";
 
 import { EditorToolbar } from "./editor-toolbar";
@@ -40,14 +40,14 @@ export function NoteEditor({
   initialTitle = "",
   initialContent = "",
   exitHref,
-  isEditing,
+  noteId,
 }: {
   initialTitle?: string;
   initialContent?: string;
   // 나가기를 눌렀을 때 갈 곳. 새 노트면 홈, 수정 중이면 그 노트의 읽기 페이지
   exitHref: string;
-  // 기존 노트 수정 중인지. 수정 저장(PATCH)은 다음 브랜치에서 만든다
-  isEditing: boolean;
+  // 수정할 노트의 id. 있으면 수정(PATCH), 없으면 새 노트(POST)
+  noteId?: number;
 }) {
   const [title, setTitle] = useState(initialTitle);
   const [content, setContent] = useState(initialContent);
@@ -58,8 +58,9 @@ export function NoteEditor({
   // useMutation: 데이터를 "바꾸는" 요청(POST, PATCH, DELETE)에 쓴다.
   // 저장 중(isPending), 실패(error), 성공 후 할 일(onSuccess)을 대신 관리해 준다.
   const saveMutation = useMutation({
-    mutationFn: createNote,
-    // 저장에 성공하면 새 노트의 읽기 페이지로 이동한다
+    mutationFn: (input: { title: string; content: string }) =>
+      noteId === undefined ? createNote(input) : updateNote(noteId, input),
+    // 저장에 성공하면 그 노트의 읽기 페이지로 이동한다
     onSuccess: (note) => router.push(`/notes/${note.id}`),
   });
 
@@ -114,11 +115,8 @@ export function NoteEditor({
             <button
               type="button"
               onClick={() => saveMutation.mutate({ title, content })}
-              // 저장 중에는 두 번 누르지 못하게 막는다. 수정 저장은 아직 없다
-              disabled={saveMutation.isPending || isEditing}
-              title={
-                isEditing ? "수정 저장은 다음 단계에서 만듭니다" : undefined
-              }
+              // 저장 중에는 두 번 누르지 못하게 막는다
+              disabled={saveMutation.isPending}
               className="rounded-md bg-emerald-500 px-5 py-2 text-lg font-bold text-white hover:bg-emerald-400 disabled:cursor-not-allowed disabled:opacity-50"
             >
               {saveMutation.isPending ? "저장 중…" : "저장"}

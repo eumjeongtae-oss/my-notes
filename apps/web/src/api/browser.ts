@@ -10,7 +10,7 @@ const API_URL = process.env.NEXT_PUBLIC_API_URL;
 
 // JSON 본문을 담아 요청을 보내고, 응답 JSON을 돌려준다. 실패(4xx, 5xx)하면 ApiError를 던진다.
 async function apiSend<T>(
-  method: "POST",
+  method: "POST" | "PATCH",
   path: string,
   body: unknown,
 ): Promise<T> {
@@ -37,8 +37,16 @@ async function apiSend<T>(
   return response.json();
 }
 
-// POST /api/notes
-// 저장한 뒤 그 노트의 읽기 페이지로 이동하려고 id만 쓴다.
-export function createNote(input: { title: string; content: string }) {
+type NoteInput = { title: string; content: string };
+
+// 저장한 뒤 그 노트의 읽기 페이지로 이동하려고 응답에서 id만 쓴다.
+
+// POST /api/notes (새 노트)
+export function createNote(input: NoteInput) {
   return apiSend<{ id: number }>("POST", "/api/notes", input);
+}
+
+// PATCH /api/notes/:id (기존 노트 수정)
+export function updateNote(id: number, input: Partial<NoteInput>) {
+  return apiSend<{ id: number }>("PATCH", `/api/notes/${id}`, input);
 }
