@@ -47,7 +47,8 @@ async function apiSend<T>(
   return response.json();
 }
 
-type NoteInput = { title: string; content: string };
+// seriesId: 넣을 묶음. null이면 묶음 없음. 순서는 서버가 정한다(맨 뒤)
+type NoteInput = { title: string; content: string; seriesId: number | null };
 
 // 저장한 뒤 그 노트의 읽기 페이지로 이동하려고 응답에서 id만 쓴다.
 
@@ -79,4 +80,9 @@ export async function getNotesPage(
   return toNotesPage(
     await apiSend<NotesPageResponse>("GET", `/api/notes?${params}`),
   );
+}
+
+// POST /api/series (새 묶음 만들기). 같은 이름이 있으면 409 → ApiError
+export function createSeries(name: string) {
+  return apiSend<{ id: number; name: string }>("POST", "/api/series", { name });
 }

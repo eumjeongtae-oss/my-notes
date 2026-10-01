@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 
 import { getNote } from "@/api/notes";
+import { getSeriesList } from "@/api/series";
 
 import { NoteEditor } from "./_components/note-editor";
 
@@ -32,7 +33,11 @@ export async function generateMetadata({
 
 // (main) 그룹 밖에 있어서 헤더 없이 전체 화면을 쓴다.
 export default async function WritePage({ searchParams }: PageProps<"/write">) {
-  const note = await getEditingNote(searchParams);
+  // 수정할 노트와 묶음 목록을 동시에 가져온다 (서로 상관없는 요청이라 Promise.all)
+  const [note, seriesList] = await Promise.all([
+    getEditingNote(searchParams),
+    getSeriesList(),
+  ]);
 
   // 서버에서 조회한 데이터를 props로 클라이언트 컴포넌트에 넘긴다.
   // key: /write?id=1 에서 /write?id=2 로 이동하면 같은 컴포넌트가 재사용되어
@@ -44,6 +49,8 @@ export default async function WritePage({ searchParams }: PageProps<"/write">) {
       initialContent={note?.content}
       exitHref={note ? `/notes/${note.id}` : "/"}
       noteId={note?.id}
+      initialSeriesId={note?.series?.id ?? null}
+      seriesOptions={seriesList.map(({ id, name }) => ({ id, name }))}
     />
   );
 }
