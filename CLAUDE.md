@@ -65,9 +65,11 @@ velog 형식의 화면으로 나만 보는 개인 마크다운 노트 앱. 계�
   - **HTTP만 담당**한다: 요청 값 꺼내기, 입력 검사, 상태 코드(200/400/404) 결정. `prisma`를 직접 쓰지 않고 `src/server/*.ts` 함수를 호출한다
   - URL 값은 `Number()`로 바로 바꾸지 말고 문자열 형식부터 검사한다 (`"1e1"`, `"0x13"`도 숫자로 바뀌어 통과함)
   - 에러 응답 형식: `{ "message": "..." }`
-  - 현재 API: `GET /api/health`, `GET /api/notes/:id`
+  - 목록 API는 배열 대신 `{ items }` 객체로 응답한다 (무한스크롤 때 `nextCursor`를 추가할 수 있게)
+  - 현재 API: `GET /api/health`, `GET /api/notes?sort=latest|oldest`, `GET /api/notes/:id`
 - `prisma/schema.prisma`: DB 설계도(모델). 설정은 `prisma7.config.ts`, 생성 코드는 `src/generated/prisma`(git 제외)
 - `prisma/seed.ts`, `prisma/seed-notes/*.md`: 개발용 예시 데이터
+- `src/lib/`: DB와 상관없는 순수 함수 (`markdown.ts`: 목록용 요약문 만들기)
 - `src/server/`: 서버 전용 코드
   - `db.ts`: 앱 전체가 쓰는 Prisma 클라이언트 하나 (`server-only`, 개발 환경 SQL 로그)
   - `prisma-client.ts`: Prisma 클라이언트를 만드는 방법 (앱과 seed가 공유)
