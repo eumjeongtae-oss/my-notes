@@ -6,7 +6,7 @@
 // - 브라우저는 NEXT_PUBLIC_으로 시작하는 환경 변수만 읽을 수 있다
 import type { NoteSort } from "@/lib/note-list-params";
 
-import { ApiError } from "./errors";
+import { throwIfNotOk } from "./errors";
 import { type NotesPageResponse, toNotesPage } from "./types";
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL;
@@ -32,13 +32,7 @@ async function apiSend<T>(
     }),
   });
 
-  if (!response.ok) {
-    const data = await response.json().catch(() => null);
-    throw new ApiError(
-      response.status,
-      data?.message ?? `API 요청 실패 (${response.status})`,
-    );
-  }
+  await throwIfNotOk(response);
 
   // 204 No Content는 본문이 없어서 JSON으로 읽으면 에러가 난다
   if (response.status === 204) {

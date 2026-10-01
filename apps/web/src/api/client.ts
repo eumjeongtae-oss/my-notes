@@ -7,7 +7,7 @@ import "server-only";
 
 import { connection } from "next/server";
 
-import { ApiError } from "./errors";
+import { ApiError, throwIfNotOk } from "./errors";
 
 function getApiUrl() {
   const url = process.env.API_URL;
@@ -26,15 +26,7 @@ export async function apiGet<T>(path: string): Promise<T> {
   await connection();
 
   const response = await fetch(`${getApiUrl()}${path}`);
-
-  if (!response.ok) {
-    const body = await response.json().catch(() => null);
-    throw new ApiError(
-      response.status,
-      body?.message ?? `API 요청 실패 (${response.status})`,
-    );
-  }
-
+  await throwIfNotOk(response);
   return response.json();
 }
 
