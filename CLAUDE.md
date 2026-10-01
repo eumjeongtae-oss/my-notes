@@ -107,6 +107,8 @@ velog 형식의 화면으로 나만 보는 개인 마크다운 노트 앱. 계�
 - 기본은 서버 컴포넌트다. `"use client"`는 상태나 브라우저 API가 필요한 말단 컴포넌트에만 붙인다
 - 스타일은 Tailwind 클래스로만 작성한다. 마크다운 본문은 `prose`(typography 플러그인)를 쓴다
 - import 경로는 `@/` 별칭을 쓴다. 같은 폴더나 `_components/`는 `./`로 쓴다
+  - 같은 라우트 그룹 안에서 위쪽 `_components/`를 쓸 때는 `../`도 된다 (예: `(main)/series/page.tsx` → `../_components/home-tabs`). `@/app/(main)/...`은 괄호 때문에 읽기 불편하다
+  - 두 단계 이상(`../../`) 올라가야 하면 여러 라우트에서 쓰는 것이니 `src/components/`로 옮긴다
 - import 순서: 외부 패키지 → `@/` → `./`, 그룹 사이에 빈 줄
 - 노트의 정렬과 화면에 보이는 날짜는 **작성 시각(`createdAt`)** 기준이다. 수정해도 순서가 바뀌지 않는다 (`updatedAt`은 기록용으로만 둔다)
 - 날짜 표시는 `src/lib/format.ts`의 `formatDate`를 쓴다. `Intl.DateTimeFormat`을 직접 만들지 않는다 (서버 시간대가 UTC라 `timeZone: "Asia/Seoul"` 지정이 필요)
