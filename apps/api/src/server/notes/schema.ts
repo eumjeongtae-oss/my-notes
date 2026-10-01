@@ -3,6 +3,8 @@
 // 규칙의 숫자는 DB 설계(schema.prisma)와 맞춘다.
 import { z } from "zod";
 
+import { decodeNoteCursor } from "./cursor";
+
 // title: VARCHAR(200)
 const TITLE_MAX = 200;
 // content: MEDIUMTEXT(최대 약 16MB). 한글은 한 글자에 3바이트라서 넉넉하게 글자 수로 제한한다
@@ -57,3 +59,35 @@ export const noteIdSchema = z
   .regex(/^[1-9]\d*$/, "노트 id는 1 이상의 정수여야 합니다.")
   .transform(Number)
   .refine((id) => id <= MAX_INT, "노트 id는 1 이상의 정수여야 합니다.");
+
+// GET /api/notes 목록 요청의 쿼리 (?sort=latest&limit=20&cursor=...)
+// URL 쿼리는 전부 문자열로 오므로, limit은 숫자로 바꾸고(coerce) cursor는 풀어서(decode) 검사한다.
+export const listNotesQuerySchema = z.object({
+  sort: z
+    .enum(["latest", "oldest"], "sort는 latest, oldest 중 하나여야 합니다.")
+    .default("latest"),
+  limit: z.coerce
+    .number("limit은 숫자여야 합니다.")
+    .int("limit은 정수여야 합니다.")
+    .min(1, "limit은 1 이상이어야 합니다.")
+    .max(50, "limit은 50 이하여야 합니다.")
+    .default(20),
+  // 첫 페이지는 cursor 없이 요청한다. 있으면 { createdAt, id }로 풀어서 넘긴다
+  cursor: z
+    .string()
+    .optional()
+    .transform((value, ctx) => {
+      if (value === undefined) return undefined;
+      const cursor = decodeNoteCursor(value);
+      if (!cursor) {
+        ctx.addIssue({
+          code: "custom",
+          message: "cursor가 올바르지 않습니다.",
+        });
+        return z.NEVER;
+      }
+      return cursor;
+    }),
+});
+
+export type ListNotesQuery = z.infer<typeof listNotesQuerySchema>;
