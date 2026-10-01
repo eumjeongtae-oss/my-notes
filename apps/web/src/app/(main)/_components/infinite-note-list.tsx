@@ -21,10 +21,12 @@ import { CardSkeleton } from "./note-list-skeleton";
 const PREFETCH_MARGIN = "0px 0px 600px 0px";
 
 export function InfiniteNoteList({
+  q,
   view,
   sort,
   initialPage,
 }: {
+  q: string;
   view: NoteView;
   sort: NoteSort;
   initialPage: NotesPage;
@@ -36,10 +38,10 @@ export function InfiniteNoteList({
     isFetchingNextPage,
     isFetchNextPageError,
   } = useInfiniteQuery({
-    // 정렬마다 따로 보관한다 (최신순 목록과 오래된순 목록은 다른 데이터)
-    queryKey: noteKeys.list(sort),
+    // 정렬, 검색어마다 따로 보관한다 (최신순 목록과 "docker" 검색 결과는 다른 데이터)
+    queryKey: noteKeys.list(sort, q),
     // pageParam: 이번에 가져올 묶음의 커서. 첫 묶음은 null
-    queryFn: ({ pageParam }) => getNotesPage(sort, pageParam),
+    queryFn: ({ pageParam }) => getNotesPage(sort, q, pageParam),
     initialPageParam: null as string | null,
     // 다음 묶음의 커서. undefined나 null이면 hasNextPage가 false가 된다
     getNextPageParam: (lastPage) => lastPage.nextCursor,

@@ -5,6 +5,6 @@ import type { NoteSort } from "@/lib/note-list-params";
 export const noteKeys = {
   // 노트 목록 전체 (최신순, 오래된순 모두). 지울 때는 이걸로 한 번에 지운다
   lists: () => ["notes"] as const,
-  // 정렬별 목록
-  list: (sort: NoteSort) => ["notes", sort] as const,
+  // 검색어, 정렬별 목록 (검색 결과도 따로 기억한다)
+  list: (sort: NoteSort, q: string) => ["notes", sort, q] as const,
 };

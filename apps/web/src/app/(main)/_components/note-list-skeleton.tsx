@@ -1,6 +1,4 @@
-import type { NoteSort, NoteView } from "@/lib/note-list-params";
-
-import { NoteListOptions } from "./note-list-options";
+import type { NoteView } from "@/lib/note-list-params";
 
 // 홈 목록을 기다리는 동안 보여줄 뼈대.
 // loading.tsx는 URL(?view=grid)을 읽을 수 없어서, 홈 page.tsx가 <Suspense fallback>으로 직접 넣는다.
@@ -48,30 +46,19 @@ export function CardSkeleton({ view }: { view: NoteView }) {
   );
 }
 
-export function NoteListSkeleton({
-  view,
-  sort,
-}: {
-  view: NoteView;
-  sort: NoteSort;
-}) {
+// 검색창과 툴바는 홈 page.tsx에서 Suspense 밖에 그리므로, 여기서는 제목과 카드만 뼈대로 그린다.
+export function NoteListSkeleton({ q, view }: { q: string; view: NoteView }) {
   const count = view === "grid" ? 6 : 4;
 
   return (
-    <div
-      role="status"
-      className={`mx-auto px-4 py-10 ${view === "grid" ? "max-w-5xl" : "max-w-3xl"}`}
-    >
+    <div role="status">
       <span className="sr-only">노트 목록을 불러오는 중입니다</span>
 
-      {/* 제목과 툴바는 데이터가 필요 없어서 진짜로 보여준다. 숫자(노트 개수)만 뼈대 */}
-      <div className="flex items-center justify-between">
-        <h1 className="flex items-center gap-2 text-2xl font-bold">
-          전체 노트
-          <span className="inline-block h-5 w-8 animate-pulse rounded bg-zinc-100" />
-        </h1>
-        <NoteListOptions view={view} sort={sort} />
-      </div>
+      {/* 제목은 데이터가 필요 없어서 진짜로 보여준다. 숫자(개수)만 뼈대 */}
+      <h1 className="mt-8 flex items-center gap-2 text-2xl font-bold break-keep">
+        {q ? `“${q}” 검색 결과` : "전체 노트"}
+        <span className="inline-block h-5 w-8 animate-pulse rounded bg-zinc-100" />
+      </h1>
 
       <div
         className={`mt-6 animate-pulse ${
