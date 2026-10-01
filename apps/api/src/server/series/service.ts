@@ -2,7 +2,10 @@
 // DB에서 무엇을 가져올지만 안다. HTTP는 모른다.
 import "server-only";
 
+import { Prisma } from "@/generated/prisma/client";
+
 import { prisma } from "../db";
+import type { CreateSeriesInput } from "./schema";
 
 // 묶음 목록. 각 묶음에 노트가 몇 개 있는지(noteCount)도 함께 돌려준다.
 //
@@ -42,4 +45,28 @@ export async function getSeriesById(id: number) {
       },
     },
   });
+}
+
+// 새 묶음을 만든다. 같은 이름의 묶음이 이미 있으면 null.
+//
+// "이 이름 있어?"를 먼저 조회하고 만들면, 조회와 만들기 사이에 같은 이름이 생길 수 있다.
+// 그래서 그냥 만들어 보고, DB의 중복 금지 규칙(@unique)이 거부하면(P2002) 중복으로 판단한다.
+export async function createSeries(input: CreateSeriesInput) {
+  try {
+    const series = await prisma.series.create({
+      data: { name: input.name },
+      select: { id: true, name: true, createdAt: true },
+    });
+    // 방금 만든 묶음에는 노트가 없다. 목록 API와 같은 모양으로 맞춘다
+    return { ...series, noteCount: 0 };
+  } catch (error) {
+    // P2002: 중복 금지(@unique) 규칙 위반
+    if (
+      error instanceof Prisma.PrismaClientKnownRequestError &&
+      error.code === "P2002"
+    ) {
+      return null;
+    }
+    throw error;
+  }
 }

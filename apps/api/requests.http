@@ -99,3 +99,11 @@ GET {{baseUrl}}/api/series
 
 ### 묶음 하나와 속한 노트들 (순서대로)
 GET {{baseUrl}}/api/series/2
+
+### 새 묶음 만들기 → 201 (한 번 더 보내면 409: 이미 있음)
+POST {{baseUrl}}/api/series
+Content-Type: application/json
+
+{
+  "name": "Docker 공부"
+}
