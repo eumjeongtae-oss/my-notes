@@ -42,37 +42,32 @@ export default async function SeriesPage({
       </h1>
       <p className="mt-3 text-zinc-500">노트 {series.notes.length}개</p>
 
-      {series.notes.length === 0 ? (
-        <p className="mt-12 text-center text-zinc-500">
-          이 묶음에는 아직 노트가 없어요.
-        </p>
-      ) : (
-        // ol: 순서가 있는 목록. 스크린리더도 "목록, 4개 항목 중 1번째"처럼 순서를 읽어 준다
-        <ol className="mt-8 divide-y divide-zinc-100 rounded-xl bg-white shadow-sm ring-1 ring-zinc-200">
-          {series.notes.map((note, index) => (
-            <li key={note.id}>
-              <Link
-                href={`/notes/${note.id}`}
-                className="flex items-center gap-4 px-5 py-4 hover:bg-zinc-50"
+      {/* ol: 순서가 있는 목록. 스크린리더도 "목록, 4개 항목 중 1번째"처럼 순서를 읽어 준다.
+          빈 묶음은 서버가 지우므로 노트가 없는 경우는 따로 그리지 않는다 */}
+      <ol className="mt-8 divide-y divide-zinc-100 rounded-xl bg-white shadow-sm ring-1 ring-zinc-200">
+        {series.notes.map((note) => (
+          <li key={note.id}>
+            <Link
+              href={`/notes/${note.id}`}
+              className="flex items-center gap-4 px-5 py-4 hover:bg-zinc-50"
+            >
+              {/* 순서 번호 (1, 2, 3...) */}
+              <span className="flex size-8 shrink-0 items-center justify-center rounded-full bg-emerald-50 text-sm font-bold text-emerald-700">
+                {note.seriesOrder}
+              </span>
+              <span className="min-w-0 flex-1 truncate font-semibold">
+                {note.title}
+              </span>
+              <time
+                dateTime={note.createdAt.toISOString()}
+                className="hidden shrink-0 text-sm text-zinc-400 sm:block"
               >
-                {/* 순서 번호. seriesOrder가 비어 있으면 목록 순서로 대신한다 */}
-                <span className="flex size-8 shrink-0 items-center justify-center rounded-full bg-emerald-50 text-sm font-bold text-emerald-700">
-                  {note.seriesOrder ?? index + 1}
-                </span>
-                <span className="min-w-0 flex-1 truncate font-semibold">
-                  {note.title}
-                </span>
-                <time
-                  dateTime={note.createdAt.toISOString()}
-                  className="hidden shrink-0 text-sm text-zinc-400 sm:block"
-                >
-                  {formatDate(note.createdAt)}
-                </time>
-              </Link>
-            </li>
-          ))}
-        </ol>
-      )}
+                {formatDate(note.createdAt)}
+              </time>
+            </Link>
+          </li>
+        ))}
+      </ol>
     </div>
   );
 }
