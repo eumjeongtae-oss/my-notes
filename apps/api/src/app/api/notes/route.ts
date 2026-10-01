@@ -3,7 +3,7 @@ import { withErrorHandling } from "@/lib/with-error-handling";
 import { createNoteSchema, listNotesQuerySchema } from "@/server/notes/schema";
 import { createNote, listNotes } from "@/server/notes/service";
 
-// GET /api/notes?sort=latest|oldest&limit=20&cursor=...
+// GET /api/notes?q=검색어&sort=latest|oldest&limit=20&cursor=...
 // 노트 목록을 한 묶음씩 조회한다 (커서 페이지네이션). 본문 대신 요약(excerpt)만 담는다.
 //   200: { items: [...], nextCursor: "..." | null, total?: number }
 //        total(전체 개수)은 첫 묶음(cursor 없음)에만 있다
