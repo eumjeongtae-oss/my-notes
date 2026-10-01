@@ -36,8 +36,8 @@ export default async function NotePage({ params }: PageProps<"/notes/[id]">) {
       </h1>
 
       <div className="mt-8 flex items-center justify-between text-zinc-500">
-        <time dateTime={note.updatedAt.toISOString()}>
-          {formatDate(note.updatedAt)}
+        <time dateTime={note.createdAt.toISOString()}>
+          {formatDate(note.createdAt)}
         </time>
         <Link
           href={`/write?id=${note.id}`}

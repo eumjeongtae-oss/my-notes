@@ -61,12 +61,12 @@ type NoteSummaryResponse = {
   id: number;
   title: string;
   excerpt: string;
-  updatedAt: string;
+  createdAt: string;
   series: { id: number; name: string } | null;
 };
 
-export type NoteSummary = Omit<NoteSummaryResponse, "updatedAt"> & {
-  updatedAt: Date;
+export type NoteSummary = Omit<NoteSummaryResponse, "createdAt"> & {
+  createdAt: Date;
 };
 
 // GET /api/notes?sort=latest|oldest
@@ -77,6 +77,6 @@ export async function getNotes(sort: NoteSort): Promise<NoteSummary[]> {
   );
   return items.map((item) => ({
     ...item,
-    updatedAt: new Date(item.updatedAt),
+    createdAt: new Date(item.createdAt),
   }));
 }

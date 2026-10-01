@@ -19,15 +19,16 @@ export async function listNotes({ sort }: { sort: NoteSort }) {
   const direction = sort === "latest" ? "desc" : "asc";
 
   const notes = await prisma.note.findMany({
-    // 수정 시각이 같으면 id로 한 번 더 정렬해서 항상 같은 순서가 나오게 한다.
+    // 작성 시각 기준으로 정렬한다. 수정해도 순서가 바뀌지 않는다.
+    // 작성 시각이 같으면 id로 한 번 더 정렬해서 항상 같은 순서가 나오게 한다.
     // (무한스크롤에서 "어디까지 봤는지"를 정확히 이어가려면 순서가 고정돼야 한다)
-    orderBy: [{ updatedAt: direction }, { id: direction }],
+    orderBy: [{ createdAt: direction }, { id: direction }],
     select: {
       id: true,
       title: true,
       // 요약을 만들기 위해 DB에서는 본문을 가져오지만, 응답에는 넣지 않는다
       content: true,
-      updatedAt: true,
+      createdAt: true,
       series: { select: { id: true, name: true } },
     },
   });
