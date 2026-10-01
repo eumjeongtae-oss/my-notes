@@ -4,7 +4,7 @@ import "server-only";
 
 import { cache } from "react";
 
-import { apiGet, apiGetOrNull } from "./client";
+import { apiGet, apiGetOrNull } from "./server";
 import {
   type SeriesDetail,
   type SeriesDetailResponse,

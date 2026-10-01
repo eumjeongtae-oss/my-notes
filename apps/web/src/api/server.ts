@@ -1,4 +1,4 @@
-// 백엔드(apps/api)를 호출하는 공통 함수.
+// 서버 컴포넌트에서 백엔드(apps/api)를 호출하는 공통 함수. 브라우저용 browser.ts와 짝이다.
 // 화면은 fetch를 직접 쓰지 않고 src/api/*.ts의 함수(getNote 등)만 호출한다.
 //
 // server-only: API_URL은 서버에만 있는 환경 변수라서, 지금 함수들은 서버 컴포넌트에서만 쓴다.

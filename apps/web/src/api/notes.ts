@@ -5,7 +5,7 @@ import { cache } from "react";
 
 import type { NoteSort } from "@/lib/note-list-params";
 
-import { apiGet, apiGetOrNull } from "./client";
+import { apiGet, apiGetOrNull } from "./server";
 import {
   type Note,
   type NoteResponse,
