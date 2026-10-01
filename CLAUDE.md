@@ -11,9 +11,8 @@ velog 형식의 화면으로 나만 보는 개인 마크다운 노트 앱. 계�
 회사처럼 프론트와 백엔드를 나눈다. **pnpm workspace 모노레포**로 저장소는 하나, 앱은 둘이다.
 
 - `apps/web`: 프론트 Next.js (포트 3000). 화면만 담당하고 **DB나 백엔드 코드를 import하지 않는다.** 데이터는 오직 REST API로 주고받는다
+  - ESLint `no-restricted-imports`로 강제한다 (`apps/web/eslint.config.mjs`). Prisma나 `apps/api` 코드를 import하면 린트 에러
 - `apps/api`: 백엔드 Next.js (포트 4000). Route Handler로 REST API를 만들고 Prisma로 MySQL에 접근한다
-
-> 🚧 전환 중 (`chore/monorepo` 브랜치): 프론트의 모든 화면이 API를 쓴다(가짜 데이터 삭제 완료). ESLint 경계 규칙을 넣은 뒤 `main`에 합친다.
 
 ## 기술 스택
 
