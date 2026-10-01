@@ -7,12 +7,13 @@ import CodeMirror, {
   type ReactCodeMirrorRef,
 } from "@uiw/react-codemirror";
 import { useMutation } from "@tanstack/react-query";
-import { ArrowLeft } from "lucide-react";
+import { ArrowLeft, LoaderCircle } from "lucide-react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useRef, useState } from "react";
+import { toast } from "sonner";
 
-import { createNote } from "@/api/browser";
+import { createNote, updateNote } from "@/api/browser";
 import { MarkdownPreview } from "@/components/markdown-preview";
 
 import { EditorToolbar } from "./editor-toolbar";
@@ -40,14 +41,14 @@ export function NoteEditor({
   initialTitle = "",
   initialContent = "",
   exitHref,
-  isEditing,
+  noteId,
 }: {
   initialTitle?: string;
   initialContent?: string;
   // 나가기를 눌렀을 때 갈 곳. 새 노트면 홈, 수정 중이면 그 노트의 읽기 페이지
   exitHref: string;
-  // 기존 노트 수정 중인지. 수정 저장(PATCH)은 다음 브랜치에서 만든다
-  isEditing: boolean;
+  // 수정할 노트의 id. 있으면 수정(PATCH), 없으면 새 노트(POST)
+  noteId?: number;
 }) {
   const [title, setTitle] = useState(initialTitle);
   const [content, setContent] = useState(initialContent);
@@ -58,9 +59,16 @@ export function NoteEditor({
   // useMutation: 데이터를 "바꾸는" 요청(POST, PATCH, DELETE)에 쓴다.
   // 저장 중(isPending), 실패(error), 성공 후 할 일(onSuccess)을 대신 관리해 준다.
   const saveMutation = useMutation({
-    mutationFn: createNote,
-    // 저장에 성공하면 새 노트의 읽기 페이지로 이동한다
-    onSuccess: (note) => router.push(`/notes/${note.id}`),
+    mutationFn: (input: { title: string; content: string }) =>
+      noteId === undefined ? createNote(input) : updateNote(noteId, input),
+    // 저장에 성공하면 토스트를 띄우고 그 노트의 읽기 페이지로 이동한다.
+    // (실패 메시지는 토스트 대신 버튼 옆에 남겨서 놓치지 않게 한다)
+    onSuccess: (note) => {
+      toast.success(
+        noteId === undefined ? "노트를 저장했어요" : "노트를 수정했어요",
+      );
+      router.push(`/notes/${note.id}`);
+    },
   });
 
   return (
@@ -114,14 +122,22 @@ export function NoteEditor({
             <button
               type="button"
               onClick={() => saveMutation.mutate({ title, content })}
-              // 저장 중에는 두 번 누르지 못하게 막는다. 수정 저장은 아직 없다
-              disabled={saveMutation.isPending || isEditing}
-              title={
-                isEditing ? "수정 저장은 다음 단계에서 만듭니다" : undefined
-              }
-              className="rounded-md bg-emerald-500 px-5 py-2 text-lg font-bold text-white hover:bg-emerald-400 disabled:cursor-not-allowed disabled:opacity-50"
+              // 저장 중에는 두 번 누르지 못하게 막는다
+              disabled={saveMutation.isPending}
+              // aria-busy: 스크린리더에 "처리 중"이라고 알려준다
+              aria-busy={saveMutation.isPending}
+              // w-36: 글자가 "저장" → "저장 중…"으로 바뀌어도 버튼 폭이 그대로라 옆의 에러 메시지가 들썩이지 않는다
+              className="inline-flex w-36 items-center justify-center gap-2 rounded-md bg-emerald-500 py-2 text-lg font-bold text-white hover:bg-emerald-400 disabled:cursor-not-allowed disabled:opacity-50"
             >
-              {saveMutation.isPending ? "저장 중…" : "저장"}
+              {saveMutation.isPending ? (
+                <>
+                  {/* animate-spin: Tailwind의 계속 회전하는 애니메이션 */}
+                  <LoaderCircle className="size-5 animate-spin" />
+                  저장 중…
+                </>
+              ) : (
+                "저장"
+              )}
             </button>
           </div>
         </footer>

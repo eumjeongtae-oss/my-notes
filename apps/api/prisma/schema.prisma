@@ -40,8 +40,8 @@ model Note {
   // 홈 맨 위에 고정할 노트인지. 기존 노트는 모두 고정 안 된 상태(false)로 시작한다
   pinned      Boolean  @default(false)
 
-  // 인덱스(책 뒤의 찾아보기): 홈 목록 정렬/무한스크롤, 시리즈 안의 순서 조회용
-  @@index([updatedAt, id])
+  // 인덱스(책 뒤의 찾아보기): 홈 목록 정렬/무한스크롤(작성 시각순), 시리즈 안의 순서 조회용
+  @@index([createdAt, id])
   @@index([seriesId, seriesOrder])
   @@map("notes")
 }

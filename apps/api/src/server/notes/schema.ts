@@ -33,3 +33,27 @@ export const createNoteSchema = z.object({
 // 스키마에서 TypeScript 타입을 뽑아낸다. 규칙과 타입을 따로 적지 않아도 된다
 // → { title: string; content: string }
 export type CreateNoteInput = z.infer<typeof createNoteSchema>;
+
+// PATCH /api/notes/:id 로 노트를 고칠 때 받는 값.
+// 저장 규칙을 그대로 쓰되, 모든 칸을 "보내도 되고 안 보내도 되게"(partial) 바꾼다.
+// 보낸 칸만 고치고, 보낸 칸은 저장할 때와 똑같은 규칙으로 검사한다.
+export const updateNoteSchema = createNoteSchema
+  .partial()
+  // 아무 칸도 안 보내면({}) 고칠 게 없으므로 막는다
+  .refine((input) => Object.keys(input).length > 0, {
+    error: "고칠 내용(title 또는 content)을 하나 이상 보내 주세요.",
+  });
+
+export type UpdateNoteInput = z.infer<typeof updateNoteSchema>;
+
+// MySQL INT 칸의 최댓값. 이보다 큰 id는 존재할 수 없다.
+const MAX_INT = 2_147_483_647;
+
+// URL의 노트 id (/api/notes/:id). URL에서 온 값은 항상 문자열이다.
+// Number()부터 쓰면 "1e1"(→10), "0x13"(→19)도 숫자로 바뀌어 통과해 버리므로
+// "0이 아닌 숫자로 시작하는 숫자만"인지 문자열로 먼저 확인한 뒤 숫자로 바꾼다.
+export const noteIdSchema = z
+  .string()
+  .regex(/^[1-9]\d*$/, "노트 id는 1 이상의 정수여야 합니다.")
+  .transform(Number)
+  .refine((id) => id <= MAX_INT, "노트 id는 1 이상의 정수여야 합니다.");

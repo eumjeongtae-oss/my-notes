@@ -12,6 +12,7 @@ import {
   QueryClientProvider,
 } from "@tanstack/react-query";
 import { ReactQueryDevtools } from "@tanstack/react-query-devtools";
+import { Toaster } from "sonner";
 
 function makeQueryClient() {
   return new QueryClient({
@@ -42,6 +43,9 @@ export function Providers({ children }: { children: React.ReactNode }) {
   return (
     <QueryClientProvider client={queryClient}>
       {children}
+      {/* 토스트가 그려지는 자리. 루트 레이아웃에 있어서 페이지를 이동해도 토스트가 남아 있다.
+          저장 버튼이 아래쪽에 있어서 아래 가운데에 띄운다 */}
+      <Toaster position="bottom-center" richColors />
       {/* 개발할 때만 화면 구석에 나타난다. 운영 빌드에는 자동으로 빠진다 */}
       <ReactQueryDevtools />
     </QueryClientProvider>

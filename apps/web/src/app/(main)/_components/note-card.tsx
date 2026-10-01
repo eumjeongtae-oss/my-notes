@@ -42,7 +42,7 @@ export function NoteCard({
         </p>
       </div>
       <div className={`border-t border-zinc-100 text-zinc-500 ${style.footer}`}>
-        {formatDate(note.updatedAt)}
+        {formatDate(note.createdAt)}
       </div>
     </Link>
   );

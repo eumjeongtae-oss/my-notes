@@ -6,6 +6,8 @@ import { getNote } from "@/api/notes";
 import { MarkdownPreview } from "@/components/markdown-preview";
 import { formatDate } from "@/lib/format";
 
+import { DeleteNoteButton } from "./_components/delete-note-button";
+
 // 브라우저 탭 제목을 노트 제목으로 바꾼다.
 export async function generateMetadata({
   params,
@@ -36,15 +38,19 @@ export default async function NotePage({ params }: PageProps<"/notes/[id]">) {
       </h1>
 
       <div className="mt-8 flex items-center justify-between text-zinc-500">
-        <time dateTime={note.updatedAt.toISOString()}>
-          {formatDate(note.updatedAt)}
+        <time dateTime={note.createdAt.toISOString()}>
+          {formatDate(note.createdAt)}
         </time>
-        <Link
-          href={`/write?id=${note.id}`}
-          className="text-sm hover:text-zinc-900"
-        >
-          수정
-        </Link>
+        <div className="flex items-center gap-3">
+          <Link
+            href={`/write?id=${note.id}`}
+            className="text-sm hover:text-zinc-900"
+          >
+            수정
+          </Link>
+          {/* 버튼과 확인 창은 클릭이 필요해서 클라이언트 컴포넌트로 분리했다 */}
+          <DeleteNoteButton noteId={note.id} title={note.title} />
+        </div>
       </div>
 
       <hr className="mt-6 mb-12 border-zinc-100" />

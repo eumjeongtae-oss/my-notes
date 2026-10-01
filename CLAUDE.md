@@ -18,6 +18,7 @@ velog 형식의 화면으로 나만 보는 개인 마크다운 노트 앱. 계�
 
 - Next.js 16 (App Router), React 19, TypeScript, Tailwind CSS 4, pnpm
 - 프론트에서 브라우저가 API를 부를 때(저장 버튼, 무한스크롤, 검색)는 React Query(TanStack Query v5). 첫 화면은 서버 컴포넌트에서 조회한다
+- 알림 토스트는 sonner. **성공**(저장, 수정, 삭제)은 토스트로, **실패**는 토스트 대신 문제가 난 자리(버튼 옆)에 빨간 글씨로 보여준다
 - 백엔드 입력 검증은 zod 4
 - DB는 MySQL 8, ORM은 Prisma다 (팀 프로젝트와 같은 스택이라 선택. 다른 DB나 ORM을 제안하지 않는다)
 - 개발용 MySQL은 Docker Compose로 로컬에서 띄운다
@@ -67,11 +68,12 @@ velog 형식의 화면으로 나만 보는 개인 마크다운 노트 앱. 계�
   - **HTTP만 담당**한다: 요청 값 꺼내기, 입력 검사, 상태 코드(200/400/404) 결정. `prisma`를 직접 쓰지 않고 `src/server/*.ts` 함수를 호출한다
   - URL 값은 `Number()`로 바로 바꾸지 말고 문자열 형식부터 검사한다 (`"1e1"`, `"0x13"`도 숫자로 바뀌어 통과함)
   - 에러 응답 형식: `{ "message": "..." }`. 입력 검증(zod) 실패는 칸별 메시지를 더해 `{ "message", "fieldErrors": { "title": ["..."] } }`
-  - 새로 만들면 201 Created와 `Location` 헤더(새 리소스 주소)로 응답한다
+  - 새로 만들면 201 Created와 `Location` 헤더(새 리소스 주소), 지우면 204 No Content(본문 없음)로 응답한다
   - **모든 API 함수는 `withErrorHandling`(`src/lib/with-error-handling.ts`)으로 감싼다** (`export const GET = withErrorHandling(async (request) => ...)`). 예상 못 한 에러는 서버 로그에 원인을 남기고 500 `{ message }`로 응답한다. 에러 내용(DB 주소, SQL)을 응답에 넣지 않는다
   - 400, 404처럼 예상한 에러는 각 API가 직접 응답한다
   - 목록 API는 배열 대신 `{ items }` 객체로 응답한다 (무한스크롤 때 `nextCursor`를 추가할 수 있게)
-  - 현재 API: `GET /api/health`, `GET /api/notes?sort=latest|oldest`, `POST /api/notes`, `GET /api/notes/:id`
+  - 요청 본문은 `parseBody(request, 스키마)`(`src/lib/parse-body.ts`)로 읽고 검사한다. URL의 id도 zod 스키마(`noteIdSchema`)로 검사한다
+  - 현재 API: `GET /api/health`, `GET /api/notes?sort=latest|oldest`, `POST /api/notes`, `GET /api/notes/:id`, `PATCH /api/notes/:id`, `DELETE /api/notes/:id`
 - `requests.http`: API를 직접 호출해 보는 파일 (VS Code REST Client). API를 추가하면 여기에도 예시 요청을 추가한다
 - `prisma/schema.prisma`: DB 설계도(모델). 설정은 `prisma7.config.ts`, 생성 코드는 `src/generated/prisma`(git 제외)
 - `prisma/seed.ts`, `prisma/seed-notes/*.md`: 개발용 예시 데이터
@@ -89,6 +91,7 @@ velog 형식의 화면으로 나만 보는 개인 마크다운 노트 앱. 계�
 - 스타일은 Tailwind 클래스로만 작성한다. 마크다운 본문은 `prose`(typography 플러그인)를 쓴다
 - import 경로는 `@/` 별칭을 쓴다. 같은 폴더나 `_components/`는 `./`로 쓴다
 - import 순서: 외부 패키지 → `@/` → `./`, 그룹 사이에 빈 줄
+- 노트의 정렬과 화면에 보이는 날짜는 **작성 시각(`createdAt`)** 기준이다. 수정해도 순서가 바뀌지 않는다 (`updatedAt`은 기록용으로만 둔다)
 - 날짜 표시는 `src/lib/format.ts`의 `formatDate`를 쓴다. `Intl.DateTimeFormat`을 직접 만들지 않는다 (서버 시간대가 UTC라 `timeZone: "Asia/Seoul"` 지정이 필요)
 - 브랜치는 `feat/...`, `fix/...`, `chore/...`로 따고 `main`에 합친다
 - 커밋 메시지는 Conventional Commits 형식으로 쓰고 내용은 한국어로 쓴다 (예: `feat: 노트 목록 사이드바 추가`)

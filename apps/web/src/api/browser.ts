@@ -10,9 +10,9 @@ const API_URL = process.env.NEXT_PUBLIC_API_URL;
 
 // JSON 본문을 담아 요청을 보내고, 응답 JSON을 돌려준다. 실패(4xx, 5xx)하면 ApiError를 던진다.
 async function apiSend<T>(
-  method: "POST",
+  method: "POST" | "PATCH" | "DELETE",
   path: string,
-  body: unknown,
+  body?: unknown,
 ): Promise<T> {
   if (!API_URL) {
     throw new Error(
@@ -22,8 +22,11 @@ async function apiSend<T>(
 
   const response = await fetch(`${API_URL}${path}`, {
     method,
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify(body),
+    // 본문이 있을 때만 JSON으로 보낸다 (DELETE는 본문이 없다)
+    ...(body !== undefined && {
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(body),
+    }),
   });
 
   if (!response.ok) {
@@ -34,11 +37,28 @@ async function apiSend<T>(
     );
   }
 
+  // 204 No Content는 본문이 없어서 JSON으로 읽으면 에러가 난다
+  if (response.status === 204) {
+    return undefined as T;
+  }
   return response.json();
 }
 
-// POST /api/notes
-// 저장한 뒤 그 노트의 읽기 페이지로 이동하려고 id만 쓴다.
-export function createNote(input: { title: string; content: string }) {
+type NoteInput = { title: string; content: string };
+
+// 저장한 뒤 그 노트의 읽기 페이지로 이동하려고 응답에서 id만 쓴다.
+
+// POST /api/notes (새 노트)
+export function createNote(input: NoteInput) {
   return apiSend<{ id: number }>("POST", "/api/notes", input);
+}
+
+// PATCH /api/notes/:id (기존 노트 수정)
+export function updateNote(id: number, input: Partial<NoteInput>) {
+  return apiSend<{ id: number }>("PATCH", `/api/notes/${id}`, input);
+}
+
+// DELETE /api/notes/:id (노트 삭제). 성공하면 204라 돌려줄 값이 없다
+export function deleteNote(id: number) {
+  return apiSend<void>("DELETE", `/api/notes/${id}`);
 }

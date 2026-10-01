@@ -149,6 +149,73 @@ const notes: SeedNote[] = [
   { file: "20-roadmap.md", title: "앞으로 할 일", time: "16:10" },
 ];
 
+// 무한스크롤을 시험할 수 있도록 넣는 샘플 노트.
+// 학습 노트(9월 30일)보다 과거로 하루에 하나씩 만든다 → 9월 29일, 28일, ... (총 SAMPLE_COUNT개)
+// 제목에 [샘플]을 붙여 진짜 노트와 구분한다.
+const SAMPLE_COUNT = 100;
+
+const sampleTopics = [
+  {
+    title: "오늘의 회고",
+    body: `오늘 한 일을 돌아본다. 잘한 점은 작게 나눠서 하나씩 끝낸 것이고, 아쉬운 점은 중간에 쉬는 시간을 놓친 것이다.
+
+- [x] 계획한 작업 끝내기
+- [ ] 내일 할 일 정리하기`,
+  },
+  {
+    title: "책 읽고 정리",
+    body: `읽은 부분에서 기억하고 싶은 문장을 옮겨 둔다.
+
+> 좋은 코드는 읽는 사람을 위한 글이다.
+
+다음에는 예제 코드를 직접 따라 쳐 보기로 했다.`,
+  },
+  {
+    title: "회의 메모",
+    body: `## 안건
+
+1. 이번 주 진행 상황 공유
+2. 막힌 부분과 도움이 필요한 부분
+
+## 결정
+
+- 다음 회의 전까지 각자 맡은 부분을 마무리한다`,
+  },
+  {
+    title: "아이디어 메모",
+    body: `떠오른 생각을 잊기 전에 적어 둔다. 노트에 **태그**를 붙이면 비슷한 노트끼리 모아 보기 편할 것 같다. 우선순위는 낮게 두고 나중에 다시 본다.`,
+  },
+  {
+    title: "공부 계획",
+    body: `| 요일 | 할 일 |
+| --- | --- |
+| 월 | 개념 읽기 |
+| 수 | 예제 따라 하기 |
+| 금 | 정리 노트 쓰기 |
+
+한 번에 많이 하기보다 매일 조금씩 하는 게 목표다.`,
+  },
+];
+
+function makeSampleNotes(startId: number) {
+  return Array.from({ length: SAMPLE_COUNT }, (_, index) => {
+    const topic = sampleTopics[index % sampleTopics.length];
+    const number = String(index + 1).padStart(3, "0");
+    // 9월 29일 정오(한국 시간)부터 하루씩 과거로
+    const date = new Date(
+      new Date("2026-09-29T12:00:00+09:00").getTime() -
+        index * 24 * 60 * 60 * 1000,
+    );
+    return {
+      id: startId + index,
+      title: `[샘플] ${topic.title} #${number}`,
+      content: topic.body,
+      createdAt: date,
+      updatedAt: date,
+    };
+  });
+}
+
 function readNote(file: string) {
   // prisma db seed는 프로젝트 루트에서 실행된다
   return readFileSync(
@@ -179,8 +246,11 @@ async function main() {
     }),
   });
 
+  // 학습 노트 다음 id부터 샘플 노트를 넣는다
+  await prisma.note.createMany({ data: makeSampleNotes(notes.length + 1) });
+
   console.log(
-    `시리즈 ${series.length}개, 노트 ${notes.length}개를 넣었습니다.`,
+    `시리즈 ${series.length}개, 학습 노트 ${notes.length}개, 샘플 노트 ${SAMPLE_COUNT}개를 넣었습니다.`,
   );
 }
 

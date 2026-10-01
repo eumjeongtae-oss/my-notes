@@ -3,11 +3,11 @@
 // API(route.ts)는 여기 함수만 호출하고 prisma를 직접 쓰지 않는다.
 import "server-only";
 
-import type { Prisma } from "@/generated/prisma/client";
+import { Prisma } from "@/generated/prisma/client";
 import { getExcerpt } from "@/lib/markdown";
 
 import { prisma } from "../db";
-import type { CreateNoteInput } from "./schema";
+import type { CreateNoteInput, UpdateNoteInput } from "./schema";
 
 export type NoteSort = "latest" | "oldest";
 
@@ -19,15 +19,16 @@ export async function listNotes({ sort }: { sort: NoteSort }) {
   const direction = sort === "latest" ? "desc" : "asc";
 
   const notes = await prisma.note.findMany({
-    // 수정 시각이 같으면 id로 한 번 더 정렬해서 항상 같은 순서가 나오게 한다.
+    // 작성 시각 기준으로 정렬한다. 수정해도 순서가 바뀌지 않는다.
+    // 작성 시각이 같으면 id로 한 번 더 정렬해서 항상 같은 순서가 나오게 한다.
     // (무한스크롤에서 "어디까지 봤는지"를 정확히 이어가려면 순서가 고정돼야 한다)
-    orderBy: [{ updatedAt: direction }, { id: direction }],
+    orderBy: [{ createdAt: direction }, { id: direction }],
     select: {
       id: true,
       title: true,
       // 요약을 만들기 위해 DB에서는 본문을 가져오지만, 응답에는 넣지 않는다
       content: true,
-      updatedAt: true,
+      createdAt: true,
       series: { select: { id: true, name: true } },
     },
   });
@@ -66,4 +67,43 @@ export async function createNote(input: CreateNoteInput) {
     data: { title: input.title, content: input.content },
     select: noteDetailSelect,
   });
+}
+
+// 노트를 고친다. input에 있는 칸만 바뀐다(updatedAt은 Prisma가 자동으로 갱신).
+// 그 id의 노트가 없으면 null을 돌려준다 → API에서 404로 응답한다.
+export async function updateNote(id: number, input: UpdateNoteInput) {
+  try {
+    return await prisma.note.update({
+      where: { id },
+      data: input,
+      select: noteDetailSelect,
+    });
+  } catch (error) {
+    // P2025: "고치려는 줄을 찾을 수 없다"는 Prisma 에러 코드
+    if (
+      error instanceof Prisma.PrismaClientKnownRequestError &&
+      error.code === "P2025"
+    ) {
+      return null;
+    }
+    throw error;
+  }
+}
+
+// 노트를 지운다. 지웠으면 true, 그 id의 노트가 없으면 false.
+// 진짜 삭제(hard delete)다. 되돌릴 수 없으므로 화면에서 한 번 더 확인받는다.
+export async function deleteNote(id: number) {
+  try {
+    await prisma.note.delete({ where: { id } });
+    return true;
+  } catch (error) {
+    // P2025: 지우려는 줄을 찾을 수 없음
+    if (
+      error instanceof Prisma.PrismaClientKnownRequestError &&
+      error.code === "P2025"
+    ) {
+      return false;
+    }
+    throw error;
+  }
 }
