@@ -12,6 +12,7 @@ import { useRef } from "react";
 import { toast } from "sonner";
 
 import { deleteNote } from "@/api/browser";
+import { getErrorMessage } from "@/api/errors";
 import { noteKeys } from "@/api/query-keys";
 
 export function DeleteNoteButton({
@@ -66,9 +67,7 @@ export function DeleteNoteButton({
 
         {deleteMutation.isError && (
           <p role="alert" className="mt-3 text-sm text-red-500">
-            {deleteMutation.error instanceof TypeError
-              ? "서버에 연결하지 못했어요."
-              : deleteMutation.error.message}
+            {getErrorMessage(deleteMutation.error)}
           </p>
         )}
 

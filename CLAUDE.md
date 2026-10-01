@@ -52,6 +52,7 @@ velog 형식의 화면으로 나만 보는 개인 마크다운 노트 앱. 계�
 ## 구조: apps/web (프론트)
 
 - `src/app/(main)/`: 헤더가 있는 화면들 (홈, 읽기). 라우트 그룹이라 URL에는 나타나지 않음
+- `src/app/(main)/not-found.tsx`, `error.tsx`: 헤더 안에 보이는 404, 에러 화면. `(main)` 밖(`/write`, 없는 주소)은 `src/app/not-found.tsx`, `src/app/write/error.tsx`가 맡는다
 - `src/app/_components/providers.tsx`: React Query Provider (`"use client"`). 루트 `layout.tsx`가 감싼다. 서버는 요청마다, 브라우저는 하나의 QueryClient
 - `src/app/icon.svg`: 파비콘 (Next.js 파일 규칙). 헤더 로고 `(main)/_components/logo.tsx`와 같은 모양이라 함께 고친다
 - 화면은 velog 모티브: 목록형 홈(카드형 보기는 없음), 읽기 페이지, 헤더 없는 전체 화면 글쓰기(`/write`, 왼쪽 에디터 + 오른쪽 미리보기)
@@ -60,9 +61,10 @@ velog 형식의 화면으로 나만 보는 개인 마크다운 노트 앱. 계�
   - 여러 라우트에서 같이 쓰면 `src/components/`에 둔다 (예: `markdown-preview.tsx`)
   - 한 곳에서만 쓰던 컴포넌트를 다른 라우트에서도 쓰게 되면 `src/components/`로 옮긴다
 - `src/api/`: 백엔드 API 호출 함수. 화면은 `fetch`를 직접 쓰지 않고 여기 함수(`getNote` 등)만 호출한다
-  - `client.ts`: 공통 호출 함수 (`API_URL` 붙이기, 실패 시 `ApiError`)
+  - `server.ts`: 서버 컴포넌트용 공통 호출 함수 (`API_URL` 붙이기, 실패 시 `ApiError`). `apiGet`은 `connection()`을 먼저 기다려서 페이지가 빌드 때 데이터로 굳지 않게 한다. 하나를 조회할 때는 `apiGetOrNull`(404, 400이면 `null` → 화면에서 `notFound()`)
+  - `errors.ts`: `ApiError`와 `getErrorMessage`(실패 문구. 버튼 옆 빨간 글씨에 쓴다)
   - `notes.ts`: 노트 API. JSON의 날짜 문자열을 `Date`로 바꿔서 돌려준다
-  - `client.ts`, `notes.ts`는 `server-only`(서버 컴포넌트 전용)
+  - `server.ts`, `notes.ts`, `series.ts`는 `server-only`(서버 컴포넌트 전용)
   - `types.ts`: 응답 타입과 날짜 변환 (서버용, 브라우저용 공용)
   - `browser.ts`: 브라우저(클라이언트 컴포넌트)에서 부르는 함수. `NEXT_PUBLIC_API_URL` 사용
   - `query-keys.ts`: React Query 이름표(query key). 문자열을 직접 쓰지 않고 `noteKeys`를 쓴다
@@ -105,6 +107,8 @@ velog 형식의 화면으로 나만 보는 개인 마크다운 노트 앱. 계�
 - 기본은 서버 컴포넌트다. `"use client"`는 상태나 브라우저 API가 필요한 말단 컴포넌트에만 붙인다
 - 스타일은 Tailwind 클래스로만 작성한다. 마크다운 본문은 `prose`(typography 플러그인)를 쓴다
 - import 경로는 `@/` 별칭을 쓴다. 같은 폴더나 `_components/`는 `./`로 쓴다
+  - 같은 라우트 그룹 안에서 위쪽 `_components/`를 쓸 때는 `../`도 된다 (예: `(main)/series/page.tsx` → `../_components/home-tabs`). `@/app/(main)/...`은 괄호 때문에 읽기 불편하다
+  - 두 단계 이상(`../../`) 올라가야 하면 여러 라우트에서 쓰는 것이니 `src/components/`로 옮긴다
 - import 순서: 외부 패키지 → `@/` → `./`, 그룹 사이에 빈 줄
 - 노트의 정렬과 화면에 보이는 날짜는 **작성 시각(`createdAt`)** 기준이다. 수정해도 순서가 바뀌지 않는다 (`updatedAt`은 기록용으로만 둔다)
 - 날짜 표시는 `src/lib/format.ts`의 `formatDate`를 쓴다. `Intl.DateTimeFormat`을 직접 만들지 않는다 (서버 시간대가 UTC라 `timeZone: "Asia/Seoul"` 지정이 필요)

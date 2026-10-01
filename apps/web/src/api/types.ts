@@ -90,6 +90,7 @@ export function toSeriesSummary(
 }
 
 // 묶음 하나 (GET /api/series/:id). 속한 노트들이 순서(seriesOrder)대로 온다
+// 노트가 0개인 묶음은 서버가 지우므로 notes는 항상 1개 이상이다
 export type SeriesDetailResponse = {
   id: number;
   name: string;
@@ -97,7 +98,8 @@ export type SeriesDetailResponse = {
   notes: {
     id: number;
     title: string;
-    seriesOrder: number | null;
+    // DB 칸은 비울 수 있지만(묶음 없는 노트), 묶음에 속한 노트는 서버가 항상 1, 2, 3을 채운다
+    seriesOrder: number;
     createdAt: string;
   }[];
 };

@@ -14,6 +14,7 @@ import { useRef, useState } from "react";
 import { toast } from "sonner";
 
 import { createNote, updateNote } from "@/api/browser";
+import { getErrorMessage } from "@/api/errors";
 import { noteKeys } from "@/api/query-keys";
 import { MarkdownPreview } from "@/components/markdown-preview";
 
@@ -137,9 +138,7 @@ export function NoteEditor({
             {/* 실패 메시지. 백엔드가 보낸 message(예: "제목을 입력해 주세요.")를 그대로 보여준다 */}
             {saveMutation.isError && (
               <p role="alert" className="text-sm text-red-500">
-                {saveMutation.error instanceof TypeError
-                  ? "서버에 연결하지 못했어요."
-                  : saveMutation.error.message}
+                {getErrorMessage(saveMutation.error)}
               </p>
             )}
             <button

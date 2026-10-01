@@ -5,8 +5,7 @@ import { cache } from "react";
 
 import type { NoteSort } from "@/lib/note-list-params";
 
-import { apiGet } from "./client";
-import { ApiError } from "./errors";
+import { apiGet, apiGetOrNull } from "./server";
 import {
   type Note,
   type NoteResponse,
@@ -17,26 +16,15 @@ import {
 } from "./types";
 
 // GET /api/notes/:id
-// 노트가 없거나(404) id 형식이 잘못되면(400, 예: /notes/abc) null을 돌려준다.
-// 사용자 입장에서는 둘 다 "없는 페이지"라서, 화면에서 notFound()로 처리한다.
-// 그 밖의 실패(500, 백엔드가 꺼져 있음 등)는 에러를 그대로 던진다.
+// 없거나 id 형식이 틀리면 null → 화면에서 notFound()로 처리한다.
 //
 // cache: 한 번의 페이지 요청 안에서 같은 id로 여러 번 불러도 API는 한 번만 호출한다.
 // (읽기 페이지는 generateMetadata와 본문이 각각 getNote를 부른다)
 export const getNote = cache(async (id: string): Promise<Note | null> => {
-  try {
-    return toNote(
-      await apiGet<NoteResponse>(`/api/notes/${encodeURIComponent(id)}`),
-    );
-  } catch (error) {
-    if (
-      error instanceof ApiError &&
-      (error.status === 404 || error.status === 400)
-    ) {
-      return null;
-    }
-    throw error;
-  }
+  const note = await apiGetOrNull<NoteResponse>(
+    `/api/notes/${encodeURIComponent(id)}`,
+  );
+  return note && toNote(note);
 });
 
 // GET /api/notes?sort=latest|oldest (첫 묶음)
