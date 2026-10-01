@@ -2,6 +2,7 @@
   "name": "my-notes",
   "private": true,
   "scripts": {
+    "predev": "docker compose up -d --wait",
     "dev": "pnpm --recursive --parallel dev",
     "build": "pnpm --recursive build",
     "lint": "pnpm --recursive lint",

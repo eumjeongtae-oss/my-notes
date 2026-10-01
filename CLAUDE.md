@@ -25,8 +25,8 @@ velog 형식의 화면으로 나만 보는 개인 마크다운 노트 앱. 계�
 
 모든 명령은 **저장소 루트**에서 실행한다. 특정 앱에서만 실행하려면 `pnpm --filter web ...` / `pnpm --filter api ...`를 쓴다.
 
-- `docker compose up -d --wait`: 로컬 MySQL 실행 (`docker compose down`으로 중지, `down -v`는 데이터까지 삭제)
-- `pnpm dev`: 모든 앱의 개발 서버를 동시에 실행 (web: http://localhost:3000, api: http://localhost:4000)
+- `docker compose up -d --wait`: 로컬 MySQL 실행 (`pnpm dev`가 `predev`로 자동 실행한다. `docker compose down`으로 중지, `down -v`는 데이터까지 삭제). Docker Desktop이 켜져 있어야 한다
+- `pnpm dev`: MySQL을 먼저 띄운 뒤(`predev`) 모든 앱의 개발 서버를 동시에 실행 (web: http://localhost:3000, api: http://localhost:4000)
 - `pnpm build` / `pnpm lint` / `pnpm typecheck`: 모든 앱에서 빌드, 린트, 타입 검사
 - `pnpm format` / `pnpm format:check`: 저장소 전체 Prettier (Tailwind 클래스 자동 정렬 포함)
 - `pnpm db:migrate --name 변경내용`: 마이그레이션 만들고 DB에 반영. 이후 `pnpm db:generate`로 클라이언트 코드 재생성 (Prisma 7은 자동 생성하지 않음)

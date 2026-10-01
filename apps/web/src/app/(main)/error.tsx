@@ -49,7 +49,9 @@ export default function MainError({
         </Link>
       </div>
 
-      {error.digest && (
+      {/* 오류 코드는 개발할 때 서버 로그와 맞춰보는 용도라 개발 환경에서만 보여준다.
+          (고객센터가 있는 서비스라면 운영에서도 보여줘서 문의할 때 쓰게 한다) */}
+      {process.env.NODE_ENV === "development" && error.digest && (
         <p className="mt-8 text-xs text-zinc-400">오류 코드: {error.digest}</p>
       )}
     </div>
