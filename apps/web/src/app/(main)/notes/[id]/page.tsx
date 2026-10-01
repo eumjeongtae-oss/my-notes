@@ -27,11 +27,15 @@ export default async function NotePage({ params }: PageProps<"/notes/[id]">) {
 
   return (
     <div className="mx-auto max-w-3xl px-4 py-16">
-      {/* 시리즈에 속한 노트면 제목 위에 시리즈 이름과 순서를 보여준다 */}
+      {/* 묶음(series)에 속한 노트면 제목 위에 묶음 이름과 순서를 보여준다 */}
       {note.series && (
-        <p className="mb-4 text-sm font-semibold text-emerald-600">
-          {note.series.name} · {note.seriesOrder}편
-        </p>
+        // 누르면 그 묶음의 상세 페이지로 간다
+        <Link
+          href={`/series/${note.series.id}`}
+          className="mb-4 inline-block text-sm font-semibold text-emerald-600 hover:underline"
+        >
+          {note.series.name} · {note.seriesOrder}번째
+        </Link>
       )}
       <h1 className="text-4xl leading-tight font-extrabold break-keep sm:text-5xl">
         {note.title}

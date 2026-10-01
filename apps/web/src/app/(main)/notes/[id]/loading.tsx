@@ -21,7 +21,7 @@ export default function NoteLoading() {
     <div role="status" className="mx-auto max-w-3xl animate-pulse px-4 py-16">
       <span className="sr-only">노트를 불러오는 중입니다</span>
 
-      {/* 시리즈 이름 자리 */}
+      {/* 묶음 이름 자리 */}
       <div className="mb-4 h-5 w-32 rounded bg-zinc-100" />
 
       {/* 제목 자리 (두 줄) */}

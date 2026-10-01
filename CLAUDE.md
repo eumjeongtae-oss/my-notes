@@ -6,6 +6,8 @@ velog 형식의 화면으로 나만 보는 개인 마크다운 노트 앱. 계�
 
 화면에 보이는 사이트 이름은 **차곡 (Chagok)** 이다. 프로젝트(레포, 폴더, 패키지) 이름은 그대로 `my-notes`다.
 
+노트를 순서대로 묶는 기능(velog의 시리즈)은 **화면에서 "묶음"**이라고 부른다. 코드, API, DB에서는 그대로 `series`다 (`Series` 모델, `/api/series`, `seriesId`, `seriesOrder`). 순서는 "N번째"로 표시한다.
+
 ## 아키텍처
 
 회사처럼 프론트와 백엔드를 나눈다. **pnpm workspace 모노레포**로 저장소는 하나, 앱은 둘이다.
@@ -50,7 +52,7 @@ velog 형식의 화면으로 나만 보는 개인 마크다운 노트 앱. 계�
 - `src/app/(main)/`: 헤더가 있는 화면들 (홈, 읽기). 라우트 그룹이라 URL에는 나타나지 않음
 - `src/app/_components/providers.tsx`: React Query Provider (`"use client"`). 루트 `layout.tsx`가 감싼다. 서버는 요청마다, 브라우저는 하나의 QueryClient
 - `src/app/icon.svg`: 파비콘 (Next.js 파일 규칙). 헤더 로고 `(main)/_components/logo.tsx`와 같은 모양이라 함께 고친다
-- 화면은 velog 모티브: 카드 목록 홈, 읽기 페이지, 헤더 없는 전체 화면 글쓰기(`/write`, 왼쪽 에디터 + 오른쪽 미리보기)
+- 화면은 velog 모티브: 목록형 홈(카드형 보기는 없음), 읽기 페이지, 헤더 없는 전체 화면 글쓰기(`/write`, 왼쪽 에디터 + 오른쪽 미리보기)
 - 컴포넌트 위치는 colocation 방식이다 (파일명은 kebab-case, export는 named export)
   - 한 라우트(그룹)에서만 쓰면 그 폴더의 `_components/`에 둔다 (예: `src/app/(main)/_components/header.tsx`). `_`로 시작하는 폴더는 라우팅에서 제외된다
   - 여러 라우트에서 같이 쓰면 `src/components/`에 둔다 (예: `markdown-preview.tsx`)
@@ -63,7 +65,7 @@ velog 형식의 화면으로 나만 보는 개인 마크다운 노트 앱. 계�
   - `browser.ts`: 브라우저(클라이언트 컴포넌트)에서 부르는 함수. `NEXT_PUBLIC_API_URL` 사용
   - `query-keys.ts`: React Query 이름표(query key). 문자열을 직접 쓰지 않고 `noteKeys`를 쓴다
   - **노트를 저장, 수정, 삭제한 뒤에는 `queryClient.removeQueries({ queryKey: noteKeys.lists() })`로 홈 목록 기억을 지운다.** 안 지우면 홈에 예전 목록이 보인다
-- `src/lib/`: 서버와 브라우저 어디서나 쓰는 순수 함수 (`format.ts`: 날짜 표시, `note-list-params.ts`: 홈 보기 방식과 정렬 URL 해석)
+- `src/lib/`: 서버와 브라우저 어디서나 쓰는 순수 함수 (`format.ts`: 날짜 표시, `note-list-params.ts`: 홈 검색어와 정렬 URL 해석)
 
 ## 구조: apps/api (백엔드)
 
@@ -79,7 +81,7 @@ velog 형식의 화면으로 나만 보는 개인 마크다운 노트 앱. 계�
   - 요청 본문은 `parseBody(request, 스키마)`(`src/lib/parse-body.ts`)로 읽고 검사한다. URL의 id도 zod 스키마(`noteIdSchema`)로 검사한다
   - 검색(`q`)은 제목과 본문의 LIKE 검색이다. `%`, `_`는 LIKE의 특수 기호라 `escapeLike`로 이스케이프한다 (안 하면 "%" 검색에 모든 노트가 나옴)
   - 목록은 커서 페이지네이션이다: `?limit=20&cursor=...` → `{ items, nextCursor }`. 커서는 마지막 노트의 `createdAt`과 `id`를 base64url로 묶은 불투명한 문자열 (`server/notes/cursor.ts`)
-  - 현재 API: `GET /api/health`, `GET /api/notes?q=&sort=latest|oldest&limit=&cursor=`, `POST /api/notes`, `GET /api/notes/:id`, `PATCH /api/notes/:id`, `DELETE /api/notes/:id`
+  - 현재 API: `GET /api/health`, `GET /api/notes?q=&sort=latest|oldest&limit=&cursor=`, `POST /api/notes`, `GET /api/notes/:id`, `PATCH /api/notes/:id`, `DELETE /api/notes/:id`, `GET /api/series`, `GET /api/series/:id`
 - `requests.http`: API를 직접 호출해 보는 파일 (VS Code REST Client). API를 추가하면 여기에도 예시 요청을 추가한다
 - `prisma/schema.prisma`: DB 설계도(모델). 설정은 `prisma7.config.ts`, 생성 코드는 `src/generated/prisma`(git 제외)
 - `prisma/seed.ts`, `prisma/seed-notes/*.md`: 개발용 예시 데이터
@@ -89,7 +91,10 @@ velog 형식의 화면으로 나만 보는 개인 마크다운 노트 앱. 계�
   - `prisma-client.ts`: Prisma 클라이언트를 만드는 방법 (앱과 seed가 공유)
   - `notes/service.ts`: 노트 데이터 접근 (서비스). DB에서 무엇을 가져올지만 알고 HTTP는 모른다
   - `notes/schema.ts`: 노트 API가 받는 입력 규칙 (zod). 숫자 제한은 `schema.prisma`와 맞춘다
+  - `series/service.ts`, `series/schema.ts`: 묶음(series) 조회
   - 도메인(notes, series 등)마다 폴더를 두고 `service.ts`와 `schema.ts`로 나눈다
+  - **목록에서 관계된 개수나 데이터를 반복문으로 하나씩 조회하지 않는다 (N+1 문제).** `_count`, `select`/`include`로 한 번에 가져온다
+  - URL id 검사는 `idSchema("노트")`처럼 `src/lib/id-schema.ts`를 쓴다
 
 ## 규칙
 

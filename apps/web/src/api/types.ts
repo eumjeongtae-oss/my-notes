@@ -69,3 +69,53 @@ export function toNotesPage(response: NotesPageResponse): NotesPage {
     total: response.total,
   };
 }
+
+// ── 묶음 (GET /api/series, 화면에서는 "묶음") ──────────────────
+
+export type SeriesSummaryResponse = {
+  id: number;
+  name: string;
+  noteCount: number;
+  createdAt: string;
+};
+
+export type SeriesSummary = Omit<SeriesSummaryResponse, "createdAt"> & {
+  createdAt: Date;
+};
+
+export function toSeriesSummary(
+  response: SeriesSummaryResponse,
+): SeriesSummary {
+  return { ...response, createdAt: new Date(response.createdAt) };
+}
+
+// 묶음 하나 (GET /api/series/:id). 속한 노트들이 순서(seriesOrder)대로 온다
+export type SeriesDetailResponse = {
+  id: number;
+  name: string;
+  createdAt: string;
+  notes: {
+    id: number;
+    title: string;
+    seriesOrder: number | null;
+    createdAt: string;
+  }[];
+};
+
+export type SeriesDetail = Omit<SeriesDetailResponse, "createdAt" | "notes"> & {
+  createdAt: Date;
+  notes: (Omit<SeriesDetailResponse["notes"][number], "createdAt"> & {
+    createdAt: Date;
+  })[];
+};
+
+export function toSeriesDetail(response: SeriesDetailResponse): SeriesDetail {
+  return {
+    ...response,
+    createdAt: new Date(response.createdAt),
+    notes: response.notes.map((note) => ({
+      ...note,
+      createdAt: new Date(note.createdAt),
+    })),
+  };
+}

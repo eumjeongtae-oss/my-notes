@@ -3,6 +3,8 @@
 // 규칙의 숫자는 DB 설계(schema.prisma)와 맞춘다.
 import { z } from "zod";
 
+import { idSchema } from "@/lib/id-schema";
+
 import { decodeNoteCursor } from "./cursor";
 
 // title: VARCHAR(200)
@@ -48,17 +50,8 @@ export const updateNoteSchema = createNoteSchema
 
 export type UpdateNoteInput = z.infer<typeof updateNoteSchema>;
 
-// MySQL INT 칸의 최댓값. 이보다 큰 id는 존재할 수 없다.
-const MAX_INT = 2_147_483_647;
-
-// URL의 노트 id (/api/notes/:id). URL에서 온 값은 항상 문자열이다.
-// Number()부터 쓰면 "1e1"(→10), "0x13"(→19)도 숫자로 바뀌어 통과해 버리므로
-// "0이 아닌 숫자로 시작하는 숫자만"인지 문자열로 먼저 확인한 뒤 숫자로 바꾼다.
-export const noteIdSchema = z
-  .string()
-  .regex(/^[1-9]\d*$/, "노트 id는 1 이상의 정수여야 합니다.")
-  .transform(Number)
-  .refine((id) => id <= MAX_INT, "노트 id는 1 이상의 정수여야 합니다.");
+// URL의 노트 id (/api/notes/:id)
+export const noteIdSchema = idSchema("노트");
 
 // GET /api/notes 목록 요청의 쿼리 (?sort=latest&limit=20&cursor=...)
 // URL 쿼리는 전부 문자열로 오므로, limit은 숫자로 바꾸고(coerce) cursor는 풀어서(decode) 검사한다.
