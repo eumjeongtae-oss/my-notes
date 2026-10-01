@@ -1,3 +1,4 @@
+import { withErrorHandling } from "@/lib/with-error-handling";
 import { listNotes, type NoteSort } from "@/server/notes";
 
 const SORTS: NoteSort[] = ["latest", "oldest"];
@@ -9,7 +10,7 @@ const SORTS: NoteSort[] = ["latest", "oldest"];
 //
 // 배열 대신 { items } 객체로 감싸는 이유:
 // 무한스크롤을 붙일 때 { items, nextCursor }처럼 필드를 "추가"만 하면 되도록.
-export async function GET(request: Request) {
+export const GET = withErrorHandling(async (request: Request) => {
   const sort = new URL(request.url).searchParams.get("sort") ?? "latest";
 
   // 화면은 이상한 값을 조용히 기본값으로 바꾸지만,
@@ -23,4 +24,4 @@ export async function GET(request: Request) {
 
   const items = await listNotes({ sort: sort as NoteSort });
   return Response.json({ items });
-}
+});
