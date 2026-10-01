@@ -44,3 +44,34 @@ POST {{baseUrl}}/api/notes
 Content-Type: application/json
 
 { "title": "따옴표를 안 닫음 }
+
+### 노트 고치기: 제목만 → 200
+PATCH {{baseUrl}}/api/notes/1
+Content-Type: application/json
+
+{
+  "title": "PATCH로 제목만 바꿈"
+}
+
+### 노트 고치기: 제목과 본문 → 200
+PATCH {{baseUrl}}/api/notes/1
+Content-Type: application/json
+
+{
+  "title": "프로젝트 시작: 목표와 방향 정하기",
+  "content": "PATCH로 본문도 바꿈"
+}
+
+### 아무 칸도 안 보냄 → 400
+PATCH {{baseUrl}}/api/notes/1
+Content-Type: application/json
+
+{}
+
+### 없는 노트 → 404
+PATCH {{baseUrl}}/api/notes/999
+Content-Type: application/json
+
+{
+  "title": "없는 노트"
+}

@@ -71,7 +71,8 @@ velog 형식의 화면으로 나만 보는 개인 마크다운 노트 앱. 계�
   - **모든 API 함수는 `withErrorHandling`(`src/lib/with-error-handling.ts`)으로 감싼다** (`export const GET = withErrorHandling(async (request) => ...)`). 예상 못 한 에러는 서버 로그에 원인을 남기고 500 `{ message }`로 응답한다. 에러 내용(DB 주소, SQL)을 응답에 넣지 않는다
   - 400, 404처럼 예상한 에러는 각 API가 직접 응답한다
   - 목록 API는 배열 대신 `{ items }` 객체로 응답한다 (무한스크롤 때 `nextCursor`를 추가할 수 있게)
-  - 현재 API: `GET /api/health`, `GET /api/notes?sort=latest|oldest`, `POST /api/notes`, `GET /api/notes/:id`
+  - 요청 본문은 `parseBody(request, 스키마)`(`src/lib/parse-body.ts`)로 읽고 검사한다. URL의 id도 zod 스키마(`noteIdSchema`)로 검사한다
+  - 현재 API: `GET /api/health`, `GET /api/notes?sort=latest|oldest`, `POST /api/notes`, `GET /api/notes/:id`, `PATCH /api/notes/:id`
 - `requests.http`: API를 직접 호출해 보는 파일 (VS Code REST Client). API를 추가하면 여기에도 예시 요청을 추가한다
 - `prisma/schema.prisma`: DB 설계도(모델). 설정은 `prisma7.config.ts`, 생성 코드는 `src/generated/prisma`(git 제외)
 - `prisma/seed.ts`, `prisma/seed-notes/*.md`: 개발용 예시 데이터

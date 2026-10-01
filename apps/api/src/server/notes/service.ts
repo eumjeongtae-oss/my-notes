@@ -3,11 +3,11 @@
 // API(route.ts)는 여기 함수만 호출하고 prisma를 직접 쓰지 않는다.
 import "server-only";
 
-import type { Prisma } from "@/generated/prisma/client";
+import { Prisma } from "@/generated/prisma/client";
 import { getExcerpt } from "@/lib/markdown";
 
 import { prisma } from "../db";
-import type { CreateNoteInput } from "./schema";
+import type { CreateNoteInput, UpdateNoteInput } from "./schema";
 
 export type NoteSort = "latest" | "oldest";
 
@@ -66,4 +66,25 @@ export async function createNote(input: CreateNoteInput) {
     data: { title: input.title, content: input.content },
     select: noteDetailSelect,
   });
+}
+
+// 노트를 고친다. input에 있는 칸만 바뀐다(updatedAt은 Prisma가 자동으로 갱신).
+// 그 id의 노트가 없으면 null을 돌려준다 → API에서 404로 응답한다.
+export async function updateNote(id: number, input: UpdateNoteInput) {
+  try {
+    return await prisma.note.update({
+      where: { id },
+      data: input,
+      select: noteDetailSelect,
+    });
+  } catch (error) {
+    // P2025: "고치려는 줄을 찾을 수 없다"는 Prisma 에러 코드
+    if (
+      error instanceof Prisma.PrismaClientKnownRequestError &&
+      error.code === "P2025"
+    ) {
+      return null;
+    }
+    throw error;
+  }
 }
