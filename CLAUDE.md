@@ -63,11 +63,13 @@ velog 형식의 화면으로 나만 보는 개인 마크다운 노트 앱. 계�
 - `src/app/api/**/route.ts`: REST API (Route Handler). 폴더 경로가 API 주소, export한 함수 이름(`GET`, `POST` 등)이 HTTP 메서드
   - **HTTP만 담당**한다: 요청 값 꺼내기, 입력 검사, 상태 코드(200/400/404) 결정. `prisma`를 직접 쓰지 않고 `src/server/*.ts` 함수를 호출한다
   - URL 값은 `Number()`로 바로 바꾸지 말고 문자열 형식부터 검사한다 (`"1e1"`, `"0x13"`도 숫자로 바뀌어 통과함)
-  - 에러 응답 형식: `{ "message": "..." }`
+  - 에러 응답 형식: `{ "message": "..." }`. 입력 검증(zod) 실패는 칸별 메시지를 더해 `{ "message", "fieldErrors": { "title": ["..."] } }`
+  - 새로 만들면 201 Created와 `Location` 헤더(새 리소스 주소)로 응답한다
   - **모든 API 함수는 `withErrorHandling`(`src/lib/with-error-handling.ts`)으로 감싼다** (`export const GET = withErrorHandling(async (request) => ...)`). 예상 못 한 에러는 서버 로그에 원인을 남기고 500 `{ message }`로 응답한다. 에러 내용(DB 주소, SQL)을 응답에 넣지 않는다
   - 400, 404처럼 예상한 에러는 각 API가 직접 응답한다
   - 목록 API는 배열 대신 `{ items }` 객체로 응답한다 (무한스크롤 때 `nextCursor`를 추가할 수 있게)
-  - 현재 API: `GET /api/health`, `GET /api/notes?sort=latest|oldest`, `GET /api/notes/:id`
+  - 현재 API: `GET /api/health`, `GET /api/notes?sort=latest|oldest`, `POST /api/notes`, `GET /api/notes/:id`
+- `requests.http`: API를 직접 호출해 보는 파일 (VS Code REST Client). API를 추가하면 여기에도 예시 요청을 추가한다
 - `prisma/schema.prisma`: DB 설계도(모델). 설정은 `prisma7.config.ts`, 생성 코드는 `src/generated/prisma`(git 제외)
 - `prisma/seed.ts`, `prisma/seed-notes/*.md`: 개발용 예시 데이터
 - `src/lib/`: DB와 상관없는 코드 (`markdown.ts`: 목록용 요약문, `with-error-handling.ts`: API 공통 에러 처리)

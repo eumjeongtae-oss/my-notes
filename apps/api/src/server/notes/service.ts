@@ -3,9 +3,11 @@
 // API(route.ts)는 여기 함수만 호출하고 prisma를 직접 쓰지 않는다.
 import "server-only";
 
+import type { Prisma } from "@/generated/prisma/client";
 import { getExcerpt } from "@/lib/markdown";
 
 import { prisma } from "../db";
+import type { CreateNoteInput } from "./schema";
 
 export type NoteSort = "latest" | "oldest";
 
@@ -36,20 +38,32 @@ export async function listNotes({ sort }: { sort: NoteSort }) {
   }));
 }
 
+// 노트 하나를 돌려줄 때 고르는 칸. 조회(GET)와 저장(POST) 응답이 같은 모양이 되도록 함께 쓴다.
+// 필요한 칸만 고른다. 응답에 무엇이 나가는지 여기서 명확히 보인다.
+const noteDetailSelect = {
+  id: true,
+  title: true,
+  content: true,
+  seriesOrder: true,
+  createdAt: true,
+  updatedAt: true,
+  // 연결된 시리즈의 id와 이름도 같이 가져온다 (SQL의 JOIN)
+  series: { select: { id: true, name: true } },
+} satisfies Prisma.NoteSelect;
+
 // 노트 하나를 조회한다. 없으면 null.
 export async function getNoteById(id: number) {
   return prisma.note.findUnique({
     where: { id },
-    // 필요한 칸만 고른다. 응답에 무엇이 나가는지 여기서 명확히 보인다.
-    select: {
-      id: true,
-      title: true,
-      content: true,
-      seriesOrder: true,
-      createdAt: true,
-      updatedAt: true,
-      // 연결된 시리즈의 id와 이름도 같이 가져온다 (SQL의 JOIN)
-      series: { select: { id: true, name: true } },
-    },
+    select: noteDetailSelect,
+  });
+}
+
+// 새 노트를 만든다. input은 route.ts에서 zod 규칙으로 이미 검사한 값이다.
+// id, createdAt, updatedAt, pinned는 DB가 기본값으로 채운다.
+export async function createNote(input: CreateNoteInput) {
+  return prisma.note.create({
+    data: { title: input.title, content: input.content },
+    select: noteDetailSelect,
   });
 }
