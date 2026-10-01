@@ -1,6 +1,6 @@
 import Link from "next/link";
 
-import type { NoteSummary } from "@/api/notes";
+import type { NoteSummary } from "@/api/types";
 import { formatDate } from "@/lib/format";
 import type { NoteView } from "@/lib/note-list-params";
 

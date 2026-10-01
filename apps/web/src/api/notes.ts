@@ -7,31 +7,14 @@ import type { NoteSort } from "@/lib/note-list-params";
 
 import { apiGet } from "./client";
 import { ApiError } from "./errors";
-
-// 백엔드가 보내는 JSON 모양. JSON에는 날짜 타입이 없어서 날짜는 문자열로 온다.
-type NoteResponse = {
-  id: number;
-  title: string;
-  content: string;
-  seriesOrder: number | null;
-  createdAt: string;
-  updatedAt: string;
-  series: { id: number; name: string } | null;
-};
-
-// 화면에서 쓰는 모양. 날짜는 Date로 바꿔서 formatDate에 바로 넘길 수 있게 한다.
-export type Note = Omit<NoteResponse, "createdAt" | "updatedAt"> & {
-  createdAt: Date;
-  updatedAt: Date;
-};
-
-function toNote(response: NoteResponse): Note {
-  return {
-    ...response,
-    createdAt: new Date(response.createdAt),
-    updatedAt: new Date(response.updatedAt),
-  };
-}
+import {
+  type Note,
+  type NoteResponse,
+  type NotesPage,
+  type NotesPageResponse,
+  toNote,
+  toNotesPage,
+} from "./types";
 
 // GET /api/notes/:id
 // 노트가 없거나(404) id 형식이 잘못되면(400, 예: /notes/abc) null을 돌려준다.
@@ -56,27 +39,10 @@ export const getNote = cache(async (id: string): Promise<Note | null> => {
   }
 });
 
-// 목록 API가 보내는 노트 하나의 모양. 본문(content) 대신 요약(excerpt)만 온다.
-type NoteSummaryResponse = {
-  id: number;
-  title: string;
-  excerpt: string;
-  createdAt: string;
-  series: { id: number; name: string } | null;
-};
-
-export type NoteSummary = Omit<NoteSummaryResponse, "createdAt"> & {
-  createdAt: Date;
-};
-
-// GET /api/notes?sort=latest|oldest
-// 목록 API는 { items: [...] }로 감싸서 보낸다 (무한스크롤 때 nextCursor가 추가될 자리).
-export async function getNotes(sort: NoteSort): Promise<NoteSummary[]> {
-  const { items } = await apiGet<{ items: NoteSummaryResponse[] }>(
-    `/api/notes?sort=${sort}`,
+// GET /api/notes?sort=latest|oldest (첫 묶음)
+// 홈의 첫 화면을 서버에서 그릴 때 쓴다. 다음 묶음부터는 브라우저가 browser.ts의 getNotesPage로 가져온다.
+export async function getNotes(sort: NoteSort): Promise<NotesPage> {
+  return toNotesPage(
+    await apiGet<NotesPageResponse>(`/api/notes?sort=${sort}`),
   );
-  return items.map((item) => ({
-    ...item,
-    createdAt: new Date(item.createdAt),
-  }));
 }
