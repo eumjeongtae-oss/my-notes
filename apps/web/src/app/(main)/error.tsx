@@ -4,7 +4,7 @@ import { CloudOff, RotateCw } from "lucide-react";
 import Link from "next/link";
 import { useEffect } from "react";
 
-// (main) 안의 페이지(홈, 읽기)에서 예상하지 못한 에러가 나면 이 화면이 본문 자리를 대신한다.
+// (main) 안의 페이지(홈, 읽기, 묶음)에서 예상하지 못한 에러가 나면 이 화면이 본문 자리를 대신한다.
 // 예: 백엔드(apps/api)가 꺼져 있거나 500 에러를 돌려줄 때.
 // 같은 폴더의 layout.tsx 안쪽을 대체하므로 헤더는 그대로 보인다.
 //
@@ -27,7 +27,7 @@ export default function MainError({
   return (
     <div className="mx-auto flex max-w-md flex-col items-center px-4 py-24 text-center">
       <CloudOff className="size-12 text-zinc-300" strokeWidth={1.5} />
-      <h1 className="mt-6 text-xl font-bold">노트를 불러오지 못했어요</h1>
+      <h1 className="mt-6 text-xl font-bold">페이지를 불러오지 못했어요</h1>
       <p className="mt-2 text-zinc-500">
         서버와 연결이 원활하지 않아요. 잠시 후 다시 시도해 주세요.
       </p>
