@@ -1,53 +1,25 @@
-import { getNotes } from "@/api/notes";
+import { Suspense } from "react";
+
 import { parseSort, parseView } from "@/lib/note-list-params";
 
-import { EmptyNotes } from "./_components/empty-notes";
-import { NoteCard } from "./_components/note-card";
-import { NoteListOptions } from "./_components/note-list-options";
+import { NoteList } from "./_components/note-list";
+import { NoteListSkeleton } from "./_components/note-list-skeleton";
 
+// 홈. URL에서 보기 방식과 정렬만 읽고(바로 끝남), API를 기다리는 목록은 <Suspense>로 감싼다.
+// 기다리는 동안 지금 보기 방식에 맞는 뼈대(NoteListSkeleton)가 보인다.
 export default async function HomePage({ searchParams }: PageProps<"/">) {
   const params = await searchParams;
   const view = parseView(params.view);
   const sort = parseSort(params.sort);
-  const notes = await getNotes(sort);
 
-  if (notes.length === 0) {
-    return (
-      <div className="mx-auto max-w-5xl px-4">
-        <EmptyNotes />
-      </div>
-    );
-  }
-
-  // 목록형은 한 줄이 너무 길면 읽기 어려워서 폭을 좁힌다.
   return (
-    <div
-      className={`mx-auto px-4 py-10 ${view === "grid" ? "max-w-5xl" : "max-w-3xl"}`}
+    // key: 정렬이나 보기 방식을 바꾸면 새 목록을 기다리는 동안 다시 뼈대를 보여준다.
+    // (key가 같으면 React가 이전 목록을 그대로 둔 채 기다린다)
+    <Suspense
+      key={`${view}-${sort}`}
+      fallback={<NoteListSkeleton view={view} sort={sort} />}
     >
-      <div className="flex items-center justify-between">
-        <h1 className="text-2xl font-bold">
-          전체 노트{" "}
-          <span className="text-base font-medium text-zinc-400">
-            {notes.length}
-          </span>
-        </h1>
-        <NoteListOptions view={view} sort={sort} />
-      </div>
-
-      {view === "grid" ? (
-        // 화면 폭에 따라 한 줄에 1개 → 2개(sm, 640px 이상) → 3개(lg, 1024px 이상)
-        <div className="mt-6 grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3">
-          {notes.map((note) => (
-            <NoteCard key={note.id} note={note} />
-          ))}
-        </div>
-      ) : (
-        <div className="mt-6 space-y-4">
-          {notes.map((note) => (
-            <NoteCard key={note.id} note={note} variant="list" />
-          ))}
-        </div>
-      )}
-    </div>
+      <NoteList view={view} sort={sort} />
+    </Suspense>
   );
 }
