@@ -1,7 +1,7 @@
 import { parseBody } from "@/lib/parse-body";
 import { withErrorHandling } from "@/lib/with-error-handling";
 import { noteIdSchema, updateNoteSchema } from "@/server/notes/schema";
-import { getNoteById, updateNote } from "@/server/notes/service";
+import { deleteNote, getNoteById, updateNote } from "@/server/notes/service";
 
 type Context = RouteContext<"/api/notes/[id]">;
 
@@ -67,5 +67,22 @@ export const PATCH = withErrorHandling(
     if (!note) return notFound(parsedId.id);
 
     return Response.json(note);
+  },
+);
+
+// DELETE /api/notes/:id
+// 노트를 지운다.
+//   204: 지움 (돌려줄 내용이 없어서 본문 없음)
+//   400: id 형식이 틀림
+//   404: 해당 id의 노트가 없음
+export const DELETE = withErrorHandling(
+  async (_request: Request, ctx: Context) => {
+    const parsedId = await parseNoteId(ctx);
+    if (!parsedId.success) return parsedId.response;
+
+    const deleted = await deleteNote(parsedId.id);
+    if (!deleted) return notFound(parsedId.id);
+
+    return new Response(null, { status: 204 });
   },
 );

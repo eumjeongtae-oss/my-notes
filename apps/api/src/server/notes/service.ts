@@ -89,3 +89,21 @@ export async function updateNote(id: number, input: UpdateNoteInput) {
     throw error;
   }
 }
+
+// 노트를 지운다. 지웠으면 true, 그 id의 노트가 없으면 false.
+// 진짜 삭제(hard delete)다. 되돌릴 수 없으므로 화면에서 한 번 더 확인받는다.
+export async function deleteNote(id: number) {
+  try {
+    await prisma.note.delete({ where: { id } });
+    return true;
+  } catch (error) {
+    // P2025: 지우려는 줄을 찾을 수 없음
+    if (
+      error instanceof Prisma.PrismaClientKnownRequestError &&
+      error.code === "P2025"
+    ) {
+      return false;
+    }
+    throw error;
+  }
+}

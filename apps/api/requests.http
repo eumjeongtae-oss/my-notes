@@ -75,3 +75,9 @@ Content-Type: application/json
 {
   "title": "없는 노트"
 }
+
+### 노트 지우기 → 204 (샘플 노트 중 가장 오래된 것)
+DELETE {{baseUrl}}/api/notes/120
+
+### 이미 지운 노트를 다시 지우기 → 404
+DELETE {{baseUrl}}/api/notes/120
