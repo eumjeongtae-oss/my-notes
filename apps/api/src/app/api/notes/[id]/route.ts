@@ -1,12 +1,7 @@
 import { parseBody } from "@/lib/parse-body";
 import { withErrorHandling } from "@/lib/with-error-handling";
 import { noteIdSchema, updateNoteSchema } from "@/server/notes/schema";
-import {
-  deleteNote,
-  getNoteById,
-  SeriesNotFoundError,
-  updateNote,
-} from "@/server/notes/service";
+import { deleteNote, getNoteById, updateNote } from "@/server/notes/service";
 
 type Context = RouteContext<"/api/notes/[id]">;
 
@@ -57,6 +52,7 @@ export const GET = withErrorHandling(
 
 // PATCH /api/notes/:id
 // 노트를 고친다. 바꿀 칸만 보내면 된다: { "title": "..." } 또는 { "title": "...", "content": "..." }
+// { "seriesName": "..." }는 묶음 옮기기, { "seriesName": null }은 묶음 빼기. 빈 묶음은 자동으로 지워진다
 //   200: 고친 노트 (GET과 같은 모양)
 //   400: id 형식이 틀림, JSON이 깨짐, 입력 규칙에 맞지 않음, 아무 칸도 안 보냄
 //   404: 해당 id의 노트가 없음
@@ -68,16 +64,7 @@ export const PATCH = withErrorHandling(
     const parsedBody = await parseBody(request, updateNoteSchema);
     if (!parsedBody.success) return parsedBody.response;
 
-    // 없는 묶음(seriesId)으로 옮기려고 하면 400
-    let note;
-    try {
-      note = await updateNote(parsedId.id, parsedBody.data);
-    } catch (error) {
-      if (error instanceof SeriesNotFoundError) {
-        return Response.json({ message: error.message }, { status: 400 });
-      }
-      throw error;
-    }
+    const note = await updateNote(parsedId.id, parsedBody.data);
     if (!note) return notFound(parsedId.id);
 
     return Response.json(note);
@@ -85,7 +72,7 @@ export const PATCH = withErrorHandling(
 );
 
 // DELETE /api/notes/:id
-// 노트를 지운다.
+// 노트를 지운다. 묶음의 마지막 노트였다면 묶음도 같이 지워진다.
 //   204: 지움 (돌려줄 내용이 없어서 본문 없음)
 //   400: id 형식이 틀림
 //   404: 해당 id의 노트가 없음
