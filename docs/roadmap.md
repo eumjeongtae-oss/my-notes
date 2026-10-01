@@ -3,19 +3,29 @@
 velog 형식의 화면으로 나만 보는 개인 마크다운 노트 앱.
 Next.js, Tailwind, 백엔드, AWS 배포를 실무 방식으로 익히는 것이 목표다.
 
+## 구조
+
+회사처럼 프론트와 백엔드를 나눈다. 저장소는 하나(pnpm workspace 모노레포), 앱은 둘이다.
+
+```
+apps/web  프론트 Next.js (포트 3000)  화면만. DB를 모르고 REST API만 호출한다
+apps/api  백엔드 Next.js (포트 4000)  REST API, Prisma, MySQL
+```
+
 ## 기술 스택
 
-| 역할            | 선택                                                                  |
-| --------------- | --------------------------------------------------------------------- |
-| 프론트 + 백엔드 | Next.js 16 (App Router, 풀스택), React 19, TypeScript                 |
-| 스타일          | Tailwind CSS 4, @tailwindcss/typography                               |
-| 에디터          | CodeMirror 6 + react-markdown (remark-gfm)                            |
-| DB              | MySQL 8 (개발은 Docker Compose로 로컬 실행, 배포 DB는 5단계에서 결정) |
-| ORM             | Prisma (팀 프로젝트와 같은 스택)                                      |
-| 로그인          | Google 로그인, 내 이메일만 허용 (라이브러리는 3단계에서 확정)         |
-| 이미지 저장     | AWS S3                                                                |
-| 배포            | AWS EC2 + Docker, GitHub Actions로 자동 배포                          |
-| 패키지 매니저   | pnpm                                                                  |
+| 역할          | 선택                                                                  |
+| ------------- | --------------------------------------------------------------------- |
+| 프론트        | Next.js 16 (App Router), React 19, TypeScript (`apps/web`)            |
+| 백엔드        | Next.js 16 Route Handler로 REST API (`apps/api`)                      |
+| 스타일        | Tailwind CSS 4, @tailwindcss/typography                               |
+| 에디터        | CodeMirror 6 + react-markdown (remark-gfm)                            |
+| DB            | MySQL 8 (개발은 Docker Compose로 로컬 실행, 배포 DB는 5단계에서 결정) |
+| ORM           | Prisma (팀 프로젝트와 같은 스택)                                      |
+| 로그인        | Google 로그인, 내 이메일만 허용 (라이브러리는 3단계에서 확정)         |
+| 이미지 저장   | AWS S3                                                                |
+| 배포          | AWS EC2 + Docker, GitHub Actions로 자동 배포                          |
+| 패키지 매니저 | pnpm                                                                  |
 
 ## MVP 범위
 
@@ -25,6 +35,7 @@ Next.js, Tailwind, 백엔드, AWS 배포를 실무 방식으로 익히는 것이
 - [x] 마크다운 에디터와 미리보기
 - [x] 에디터 서식 툴바 (제목, 굵게, 기울임, 취소선, 인용, 링크, 이미지 주소, 코드 블록)
 - [ ] 노트 저장 / 수정 / 삭제 (저장할 때 시리즈 선택, 새 시리즈 만들기)
+- [x] 로딩 스켈레톤 UI (홈, 읽기 페이지)
 - [ ] 홈 목록 무한스크롤
 - [ ] 노트 검색
 - [ ] 시리즈 (velog처럼 노트를 순서대로 묶기: 홈의 시리즈 탭, 시리즈 상세, 이전/다음 글)
@@ -35,25 +46,30 @@ Next.js, Tailwind, 백엔드, AWS 배포를 실무 방식으로 익히는 것이
 
 ## 이후 기능
 
-태그, 목차, 자동저장, 다크모드, 보기 방식 기억하기(쿠키), 에디터 단축키
+태그, 목차, 자동저장, 다크모드, 보기 방식 기억하기(쿠키) + 보기 방식 전환을 API 재호출 없이 브라우저에서 즉시 처리 (지금은 같은 데이터를 다시 불러오고 뼈대를 보여줌), 에디터 단축키, 에디터 표 삽입 버튼 (2열 2행 기본 표, 첫 칸 선택)
 
 ## 단계
 
 1. ✅ **화면**: 가짜 데이터로 velog식 홈, 읽기, 글쓰기 UI 만들기
-2. **DB**: MySQL 8 + Prisma
-   1. Docker로 MySQL 실행, Prisma 설정, 테이블 설계 (`notes`, `series`를 처음부터 함께)
-   2. 저장 / 수정 / 삭제 + 시리즈 선택 (Server Actions, 입력 검증)
-   3. 홈 목록 무한스크롤 (커서 페이지네이션)
-   4. 검색 (처음엔 LIKE, 이후 MySQL ngram 전문 검색)
-   5. 시리즈 화면 (홈 탭, 시리즈 상세, 이전/다음 글)
-3. **로그인**: Google 로그인, 허용 이메일 체크, 로그인 페이지, 마이페이지
+2. **DB와 API**: MySQL 8 + Prisma, 프론트/백엔드 분리
+   1. ✅ Docker로 MySQL 실행, Prisma 설정, 테이블 설계 (`notes`, `series`), seed
+   2. ✅ 모노레포로 전환: 지금 앱을 `apps/web`으로, 백엔드 `apps/api` 추가, DB 코드를 `apps/api`로 이동
+   3. ✅ 조회 API (`GET /api/notes/:id`, `GET /api/notes`) → 프론트 읽기/홈 연결
+      - 백엔드가 꺼졌을 때 에러 화면 (`error.tsx`)
+      - 로딩 중 스켈레톤 UI (`loading.tsx`, 홈 카드와 읽기 페이지 모양)
+   4. 저장 / 수정 / 삭제 API + 시리즈 선택 (`POST`, `PATCH`, `DELETE`, zod 입력 검증). 브라우저가 직접 호출하므로 React Query 도입, CORS 설정
+   5. 홈 목록 무한스크롤 (커서 페이지네이션 API)
+   6. 검색 (처음엔 LIKE, 이후 MySQL ngram 전문 검색)
+   7. 시리즈 화면 (홈 탭, 시리즈 상세, 이전/다음 글)
+3. **로그인**: 백엔드가 Google 로그인을 처리하고, 프론트와 백엔드 사이에 로그인 상태 유지. 허용 이메일 체크, 로그인 페이지, 마이페이지
 4. **이미지**: S3 업로드. 툴바 이미지 버튼을 파일 선택 업로드로 바꾸고, 드래그/붙여넣기 업로드와 카드 썸네일 추가 (로그인 이후에 해야 업로드 API가 보호됨)
-5. **배포**: Docker, EC2, 배포용 DB, GitHub Actions, 도메인과 HTTPS
+5. **배포**: 프론트와 백엔드를 각각 Docker 이미지로, EC2, 배포용 DB, GitHub Actions, 도메인과 HTTPS
 6. **품질**: 테스트(Vitest, Playwright), PR마다 CI 검사
 
 ## 작업 규칙
 
 - 기능마다 브랜치를 따서 작업한다 (`feat/...`, `fix/...`, `chore/...`)
 - 작게 커밋하고, PR로 `main`에 합친다
+- **프론트(`apps/web`)는 DB나 백엔드 코드를 import하지 않는다.** 데이터는 오직 API로 주고받는다
 - **로그인(3단계) 전에는 배포하지 않는다.** 로그인 없이 배포하면 누구나 노트를 보고 고칠 수 있다
 - AWS 계정을 만들면 **Budgets 결제 알림부터** 설정한다
