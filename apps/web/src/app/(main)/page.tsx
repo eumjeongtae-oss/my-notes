@@ -2,6 +2,7 @@ import { Suspense } from "react";
 
 import { parseQuery, parseSort, parseView } from "@/lib/note-list-params";
 
+import { HomeTabs } from "./_components/home-tabs";
 import { NoteList } from "./_components/note-list";
 import { NoteListOptions } from "./_components/note-list-options";
 import { NoteListSkeleton } from "./_components/note-list-skeleton";
@@ -19,6 +20,8 @@ export default async function HomePage({ searchParams }: PageProps<"/">) {
     <div
       className={`mx-auto px-4 py-10 ${view === "grid" ? "max-w-5xl" : "max-w-3xl"}`}
     >
+      <HomeTabs active="notes" />
+
       {/* 검색창과 툴바는 Suspense "밖"에 둔다.
           안에 두면 검색어가 바뀔 때마다(key 변경) 검색창까지 새로 만들어져서 입력 중에 포커스가 사라진다 */}
       <div className="flex flex-wrap items-center justify-between gap-4">

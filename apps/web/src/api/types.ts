@@ -69,3 +69,22 @@ export function toNotesPage(response: NotesPageResponse): NotesPage {
     total: response.total,
   };
 }
+
+// ── 묶음 (GET /api/series, 화면에서는 "묶음") ──────────────────
+
+export type SeriesSummaryResponse = {
+  id: number;
+  name: string;
+  noteCount: number;
+  createdAt: string;
+};
+
+export type SeriesSummary = Omit<SeriesSummaryResponse, "createdAt"> & {
+  createdAt: Date;
+};
+
+export function toSeriesSummary(
+  response: SeriesSummaryResponse,
+): SeriesSummary {
+  return { ...response, createdAt: new Date(response.createdAt) };
+}
