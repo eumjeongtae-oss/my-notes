@@ -31,8 +31,13 @@ export async function NoteList({
       className={`mx-auto px-4 py-10 ${view === "grid" ? "max-w-5xl" : "max-w-3xl"}`}
     >
       <div className="flex items-center justify-between">
-        {/* 20개씩 가져와서 전체 개수는 모른다 (세려면 API가 COUNT 쿼리를 따로 해야 한다) */}
-        <h1 className="text-2xl font-bold">전체 노트</h1>
+        {/* 전체 개수는 첫 묶음에만 온다 (백엔드가 첫 묶음에서만 COUNT를 한다) */}
+        <h1 className="text-2xl font-bold">
+          전체 노트{" "}
+          <span className="text-base font-medium text-zinc-400">
+            {firstPage.total}
+          </span>
+        </h1>
         <NoteListOptions view={view} sort={sort} />
       </div>
 

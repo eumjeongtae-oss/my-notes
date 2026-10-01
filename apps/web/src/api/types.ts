@@ -46,12 +46,18 @@ export type NoteSummary = Omit<NoteSummaryResponse, "createdAt"> & {
 };
 
 // 목록 한 묶음. nextCursor를 다음 요청의 cursor로 넣으면 이어서 가져온다. null이면 마지막 묶음
+// total(전체 개수)은 첫 묶음에만 온다
 export type NotesPageResponse = {
   items: NoteSummaryResponse[];
   nextCursor: string | null;
+  total?: number;
 };
 
-export type NotesPage = { items: NoteSummary[]; nextCursor: string | null };
+export type NotesPage = {
+  items: NoteSummary[];
+  nextCursor: string | null;
+  total?: number;
+};
 
 export function toNotesPage(response: NotesPageResponse): NotesPage {
   return {
@@ -60,5 +66,6 @@ export function toNotesPage(response: NotesPageResponse): NotesPage {
       createdAt: new Date(item.createdAt),
     })),
     nextCursor: response.nextCursor,
+    total: response.total,
   };
 }

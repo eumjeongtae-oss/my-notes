@@ -5,7 +5,8 @@ import { createNote, listNotes } from "@/server/notes/service";
 
 // GET /api/notes?sort=latest|oldest&limit=20&cursor=...
 // 노트 목록을 한 묶음씩 조회한다 (커서 페이지네이션). 본문 대신 요약(excerpt)만 담는다.
-//   200: { items: [...], nextCursor: "..." | null }
+//   200: { items: [...], nextCursor: "..." | null, total?: number }
+//        total(전체 개수)은 첫 묶음(cursor 없음)에만 있다
 //        다음 묶음은 nextCursor를 cursor에 그대로 넣어 요청한다. null이면 마지막 묶음
 //   400: sort, limit, cursor가 규칙에 맞지 않음
 //

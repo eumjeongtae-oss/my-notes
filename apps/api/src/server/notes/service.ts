@@ -26,30 +26,35 @@ export async function listNotes({ sort, limit, cursor }: ListNotesQuery) {
   // 최신순이면 커서보다 "작은"(더 과거), 오래된순이면 "큰"(더 최근) 것을 가져온다
   const after = sort === "latest" ? "lt" : "gt";
 
-  const notes = await prisma.note.findMany({
-    // SQL: WHERE created_at < X OR (created_at = X AND id < Y)
-    //      → 커서 노트(작성 시각 X, id Y) 바로 다음부터
-    where: cursor && {
-      OR: [
-        { createdAt: { [after]: cursor.createdAt } },
-        { createdAt: cursor.createdAt, id: { [after]: cursor.id } },
-      ],
-    },
-    // 작성 시각 기준으로 정렬한다. 수정해도 순서가 바뀌지 않는다.
-    // 작성 시각이 같으면 id로 한 번 더 정렬해서 항상 같은 순서가 나오게 한다.
-    // (커서로 "어디까지 봤는지"를 정확히 이어가려면 순서가 고정돼야 한다)
-    orderBy: [{ createdAt: direction }, { id: direction }],
-    // 하나 더 가져와서 "다음 묶음이 있는지" 알아낸다. 개수를 세는 쿼리가 따로 필요 없다
-    take: limit + 1,
-    select: {
-      id: true,
-      title: true,
-      // 요약을 만들기 위해 DB에서는 본문을 가져오지만, 응답에는 넣지 않는다
-      content: true,
-      createdAt: true,
-      series: { select: { id: true, name: true } },
-    },
-  });
+  // 첫 묶음(cursor 없음)일 때만 전체 개수를 센다. 다음 묶음부터는 세지 않는다.
+  // 목록 조회와 개수 세기를 동시에(Promise.all) 보내서 기다리는 시간이 늘지 않게 한다.
+  const [notes, total] = await Promise.all([
+    prisma.note.findMany({
+      // SQL: WHERE created_at < X OR (created_at = X AND id < Y)
+      //      → 커서 노트(작성 시각 X, id Y) 바로 다음부터
+      where: cursor && {
+        OR: [
+          { createdAt: { [after]: cursor.createdAt } },
+          { createdAt: cursor.createdAt, id: { [after]: cursor.id } },
+        ],
+      },
+      // 작성 시각 기준으로 정렬한다. 수정해도 순서가 바뀌지 않는다.
+      // 작성 시각이 같으면 id로 한 번 더 정렬해서 항상 같은 순서가 나오게 한다.
+      // (커서로 "어디까지 봤는지"를 정확히 이어가려면 순서가 고정돼야 한다)
+      orderBy: [{ createdAt: direction }, { id: direction }],
+      // 하나 더 가져와서 "다음 묶음이 있는지" 알아낸다. 개수를 세는 쿼리가 따로 필요 없다
+      take: limit + 1,
+      select: {
+        id: true,
+        title: true,
+        // 요약을 만들기 위해 DB에서는 본문을 가져오지만, 응답에는 넣지 않는다
+        content: true,
+        createdAt: true,
+        series: { select: { id: true, name: true } },
+      },
+    }),
+    cursor ? undefined : prisma.note.count(),
+  ]);
 
   const hasNext = notes.length > limit;
   const page = hasNext ? notes.slice(0, limit) : notes;
@@ -62,6 +67,8 @@ export async function listNotes({ sort, limit, cursor }: ListNotesQuery) {
     })),
     // 다음 묶음이 있으면 이번 묶음의 마지막 노트가 다음 요청의 기준이 된다
     nextCursor: hasNext && last ? encodeNoteCursor(last) : null,
+    // 첫 묶음에만 있다. 다음 묶음에서는 undefined라 JSON에서 빠진다
+    total,
   };
 }
 
