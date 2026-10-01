@@ -9,6 +9,7 @@ import { useMutation } from "@tanstack/react-query";
 import { LoaderCircle } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { useRef } from "react";
+import { toast } from "sonner";
 
 import { deleteNote } from "@/api/browser";
 
@@ -24,8 +25,11 @@ export function DeleteNoteButton({
 
   const deleteMutation = useMutation({
     mutationFn: () => deleteNote(noteId),
-    // 지웠으면 홈으로 이동한다. replace: 뒤로 가기로 지운 노트 페이지에 돌아오지 않게
-    onSuccess: () => router.replace("/"),
+    // 지웠으면 토스트를 띄우고 홈으로 이동한다. replace: 뒤로 가기로 지운 노트 페이지에 돌아오지 않게
+    onSuccess: () => {
+      toast.success("노트를 삭제했어요");
+      router.replace("/");
+    },
   });
 
   return (

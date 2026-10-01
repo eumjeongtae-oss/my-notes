@@ -11,6 +11,7 @@ import { ArrowLeft, LoaderCircle } from "lucide-react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useRef, useState } from "react";
+import { toast } from "sonner";
 
 import { createNote, updateNote } from "@/api/browser";
 import { MarkdownPreview } from "@/components/markdown-preview";
@@ -60,8 +61,14 @@ export function NoteEditor({
   const saveMutation = useMutation({
     mutationFn: (input: { title: string; content: string }) =>
       noteId === undefined ? createNote(input) : updateNote(noteId, input),
-    // 저장에 성공하면 그 노트의 읽기 페이지로 이동한다
-    onSuccess: (note) => router.push(`/notes/${note.id}`),
+    // 저장에 성공하면 토스트를 띄우고 그 노트의 읽기 페이지로 이동한다.
+    // (실패 메시지는 토스트 대신 버튼 옆에 남겨서 놓치지 않게 한다)
+    onSuccess: (note) => {
+      toast.success(
+        noteId === undefined ? "노트를 저장했어요" : "노트를 수정했어요",
+      );
+      router.push(`/notes/${note.id}`);
+    },
   });
 
   return (

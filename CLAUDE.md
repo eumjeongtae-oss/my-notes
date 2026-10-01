@@ -18,6 +18,7 @@ velog 형식의 화면으로 나만 보는 개인 마크다운 노트 앱. 계�
 
 - Next.js 16 (App Router), React 19, TypeScript, Tailwind CSS 4, pnpm
 - 프론트에서 브라우저가 API를 부를 때(저장 버튼, 무한스크롤, 검색)는 React Query(TanStack Query v5). 첫 화면은 서버 컴포넌트에서 조회한다
+- 알림 토스트는 sonner. **성공**(저장, 수정, 삭제)은 토스트로, **실패**는 토스트 대신 문제가 난 자리(버튼 옆)에 빨간 글씨로 보여준다
 - 백엔드 입력 검증은 zod 4
 - DB는 MySQL 8, ORM은 Prisma다 (팀 프로젝트와 같은 스택이라 선택. 다른 DB나 ORM을 제안하지 않는다)
 - 개발용 MySQL은 Docker Compose로 로컬에서 띄운다
