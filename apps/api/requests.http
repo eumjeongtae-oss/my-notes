@@ -87,3 +87,9 @@ GET {{baseUrl}}/api/notes?limit=5
 
 ### 목록 다음 묶음 → cursor= 뒤에 위에서 복사한 nextCursor를 붙여넣기
 GET {{baseUrl}}/api/notes?limit=5&cursor=여기에_붙여넣기
+
+### 검색: 제목이나 본문에 "docker"
+GET {{baseUrl}}/api/notes?q=docker
+
+### 검색: LIKE 특수 기호(%)도 글자 그대로 찾는다
+GET {{baseUrl}}/api/notes?q=%25

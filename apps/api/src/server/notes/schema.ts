@@ -63,6 +63,13 @@ export const noteIdSchema = z
 // GET /api/notes 목록 요청의 쿼리 (?sort=latest&limit=20&cursor=...)
 // URL 쿼리는 전부 문자열로 오므로, limit은 숫자로 바꾸고(coerce) cursor는 풀어서(decode) 검사한다.
 export const listNotesQuerySchema = z.object({
+  // 검색어. 앞뒤 공백을 지우고, 비어 있으면 검색하지 않는다(전체 목록)
+  q: z
+    .string()
+    .trim()
+    .max(100, "검색어는 100자까지 쓸 수 있습니다.")
+    .optional()
+    .transform((value) => value || undefined),
   sort: z
     .enum(["latest", "oldest"], "sort는 latest, oldest 중 하나여야 합니다.")
     .default("latest"),

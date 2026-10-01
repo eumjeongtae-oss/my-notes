@@ -21,23 +21,46 @@ const EXCERPT_LENGTH = 250;
 // 노트 목록을 한 묶음(limit개)씩 조회한다. 본문 전체 대신 요약(excerpt)만 돌려준다.
 // cursor가 있으면 "그 노트 다음"부터, 없으면 처음부터 가져온다 (커서 페이지네이션).
 // 돌려주는 nextCursor를 다음 요청에 넣으면 이어서 가져온다. 마지막 묶음이면 nextCursor는 null.
-export async function listNotes({ sort, limit, cursor }: ListNotesQuery) {
+// LIKE에서 %(아무 글자 여러 개), _(아무 글자 하나)는 특수 기호다.
+// 그대로 두면 "%"로 검색했을 때 모든 노트가 나온다. 앞에 \를 붙여 "진짜 글자"로 만든다.
+// (\ 자체도 이스케이프 기호라서 먼저 처리한다)
+function escapeLike(value: string) {
+  return value.replace(/[\\%_]/g, (char) => `\\${char}`);
+}
+
+export async function listNotes({ q, sort, limit, cursor }: ListNotesQuery) {
   const direction = sort === "latest" ? "desc" : "asc";
   // 최신순이면 커서보다 "작은"(더 과거), 오래된순이면 "큰"(더 최근) 것을 가져온다
   const after = sort === "latest" ? "lt" : "gt";
+
+  // 검색 조건. 제목이나 본문에 검색어가 들어 있는 노트
+  // SQL: (title LIKE %q% OR content LIKE %q%)
+  // 검색어는 SQL 문장에 끼워 넣지 않고 따로 전달된다(파라미터 바인딩)라서 SQL 인젝션에 안전하다
+  const keyword = q && escapeLike(q);
+  const searchWhere: Prisma.NoteWhereInput | undefined = keyword
+    ? {
+        OR: [
+          { title: { contains: keyword } },
+          { content: { contains: keyword } },
+        ],
+      }
+    : undefined;
+
+  // 커서 조건. 커서 노트(작성 시각 X, id Y) 바로 다음부터
+  // SQL: created_at < X OR (created_at = X AND id < Y)
+  const cursorWhere: Prisma.NoteWhereInput | undefined = cursor && {
+    OR: [
+      { createdAt: { [after]: cursor.createdAt } },
+      { createdAt: cursor.createdAt, id: { [after]: cursor.id } },
+    ],
+  };
 
   // 첫 묶음(cursor 없음)일 때만 전체 개수를 센다. 다음 묶음부터는 세지 않는다.
   // 목록 조회와 개수 세기를 동시에(Promise.all) 보내서 기다리는 시간이 늘지 않게 한다.
   const [notes, total] = await Promise.all([
     prisma.note.findMany({
-      // SQL: WHERE created_at < X OR (created_at = X AND id < Y)
-      //      → 커서 노트(작성 시각 X, id Y) 바로 다음부터
-      where: cursor && {
-        OR: [
-          { createdAt: { [after]: cursor.createdAt } },
-          { createdAt: cursor.createdAt, id: { [after]: cursor.id } },
-        ],
-      },
+      // 검색 조건과 커서 조건을 둘 다 만족하는 노트 (없는 조건은 무시된다)
+      where: { AND: [searchWhere ?? {}, cursorWhere ?? {}] },
       // 작성 시각 기준으로 정렬한다. 수정해도 순서가 바뀌지 않는다.
       // 작성 시각이 같으면 id로 한 번 더 정렬해서 항상 같은 순서가 나오게 한다.
       // (커서로 "어디까지 봤는지"를 정확히 이어가려면 순서가 고정돼야 한다)
@@ -53,7 +76,8 @@ export async function listNotes({ sort, limit, cursor }: ListNotesQuery) {
         series: { select: { id: true, name: true } },
       },
     }),
-    cursor ? undefined : prisma.note.count(),
+    // 전체 개수도 검색 조건을 적용해서 센다 ("검색 결과 3")
+    cursor ? undefined : prisma.note.count({ where: searchWhere }),
   ]);
 
   const hasNext = notes.length > limit;

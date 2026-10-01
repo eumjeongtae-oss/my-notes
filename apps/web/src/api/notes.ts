@@ -41,8 +41,8 @@ export const getNote = cache(async (id: string): Promise<Note | null> => {
 
 // GET /api/notes?sort=latest|oldest (첫 묶음)
 // 홈의 첫 화면을 서버에서 그릴 때 쓴다. 다음 묶음부터는 브라우저가 browser.ts의 getNotesPage로 가져온다.
-export async function getNotes(sort: NoteSort): Promise<NotesPage> {
-  return toNotesPage(
-    await apiGet<NotesPageResponse>(`/api/notes?sort=${sort}`),
-  );
+export async function getNotes(sort: NoteSort, q: string): Promise<NotesPage> {
+  const params = new URLSearchParams({ sort });
+  if (q) params.set("q", q);
+  return toNotesPage(await apiGet<NotesPageResponse>(`/api/notes?${params}`));
 }

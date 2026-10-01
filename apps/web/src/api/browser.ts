@@ -68,8 +68,13 @@ export function deleteNote(id: number) {
 
 // GET /api/notes?sort&cursor (무한스크롤의 다음 묶음)
 // cursor가 null이면 첫 묶음. 응답의 nextCursor를 다음 호출의 cursor로 넘긴다
-export async function getNotesPage(sort: NoteSort, cursor: string | null) {
+export async function getNotesPage(
+  sort: NoteSort,
+  q: string,
+  cursor: string | null,
+) {
   const params = new URLSearchParams({ sort });
+  if (q) params.set("q", q);
   if (cursor) params.set("cursor", cursor);
   return toNotesPage(
     await apiSend<NotesPageResponse>("GET", `/api/notes?${params}`),

@@ -24,9 +24,11 @@ const viewOptions: {
 // 버튼이 아니라 링크다. 누르면 URL 쿼리가 바뀌고, 서버 컴포넌트가 그 값으로 다시 그린다.
 // 그래서 useState도 "use client"도 필요 없다.
 export function NoteListOptions({
+  q,
   view,
   sort,
 }: {
+  q: string;
   view: NoteView;
   sort: NoteSort;
 }) {
@@ -36,7 +38,7 @@ export function NoteListOptions({
         {sortOptions.map((option) => (
           <Link
             key={option.value}
-            href={noteListHref({ view, sort: option.value })}
+            href={noteListHref({ q, view, sort: option.value })}
             aria-current={option.value === sort ? "true" : undefined}
             className={
               option.value === sort
@@ -53,7 +55,7 @@ export function NoteListOptions({
         {viewOptions.map(({ value, label, Icon }) => (
           <Link
             key={value}
-            href={noteListHref({ view: value, sort })}
+            href={noteListHref({ q, view: value, sort })}
             aria-label={label}
             aria-current={value === view ? "true" : undefined}
             className={`rounded-md p-1.5 ${
