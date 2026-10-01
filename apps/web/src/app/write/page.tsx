@@ -49,8 +49,8 @@ export default async function WritePage({ searchParams }: PageProps<"/write">) {
       initialContent={note?.content}
       exitHref={note ? `/notes/${note.id}` : "/"}
       noteId={note?.id}
-      initialSeriesId={note?.series?.id ?? null}
-      seriesOptions={seriesList.map(({ id, name }) => ({ id, name }))}
+      initialSeriesName={note?.series?.name ?? ""}
+      seriesOptions={seriesList.map((series) => series.name)}
     />
   );
 }
