@@ -54,7 +54,7 @@ apps/api  백엔드 Next.js (포트 4000)  REST API, Prisma, MySQL
 2. **DB와 API**: MySQL 8 + Prisma, 프론트/백엔드 분리
    1. ✅ Docker로 MySQL 실행, Prisma 설정, 테이블 설계 (`notes`, `series`), seed
    2. ✅ 모노레포로 전환: 지금 앱을 `apps/web`으로, 백엔드 `apps/api` 추가, DB 코드를 `apps/api`로 이동
-   3. 조회 API (`GET /api/notes/:id`, `GET /api/notes`) → 프론트 읽기/홈 연결
+   3. ✅ 조회 API (`GET /api/notes/:id`, `GET /api/notes`) → 프론트 읽기/홈 연결
       - 백엔드가 꺼졌을 때 에러 화면 (`error.tsx`)
       - 로딩 중 스켈레톤 UI (`loading.tsx`, 홈 카드와 읽기 페이지 모양)
    4. 저장 / 수정 / 삭제 API + 시리즈 선택 (`POST`, `PATCH`, `DELETE`, zod 입력 검증). 브라우저가 직접 호출하므로 React Query 도입, CORS 설정
