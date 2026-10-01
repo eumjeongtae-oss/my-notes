@@ -4,8 +4,7 @@ import "server-only";
 
 import { cache } from "react";
 
-import { apiGet } from "./client";
-import { ApiError } from "./errors";
+import { apiGet, apiGetOrNull } from "./client";
 import {
   type SeriesDetail,
   type SeriesDetailResponse,
@@ -28,20 +27,9 @@ export async function getSeriesList(): Promise<SeriesSummary[]> {
 // cache: generateMetadata와 본문이 같은 묶음을 부를 때 API는 한 번만 호출한다.
 export const getSeries = cache(
   async (id: string): Promise<SeriesDetail | null> => {
-    try {
-      return toSeriesDetail(
-        await apiGet<SeriesDetailResponse>(
-          `/api/series/${encodeURIComponent(id)}`,
-        ),
-      );
-    } catch (error) {
-      if (
-        error instanceof ApiError &&
-        (error.status === 404 || error.status === 400)
-      ) {
-        return null;
-      }
-      throw error;
-    }
+    const series = await apiGetOrNull<SeriesDetailResponse>(
+      `/api/series/${encodeURIComponent(id)}`,
+    );
+    return series && toSeriesDetail(series);
   },
 );

@@ -37,3 +37,20 @@ export async function apiGet<T>(path: string): Promise<T> {
 
   return response.json();
 }
+
+// apiGet과 같지만, 없거나(404) id 형식이 잘못되면(400, 예: /notes/abc) null을 돌려준다.
+// 사용자 입장에서는 둘 다 "없는 페이지"라서, 화면에서 notFound()로 처리한다.
+// 그 밖의 실패(500, 백엔드가 꺼져 있음 등)는 에러를 그대로 던진다 → error.tsx
+export async function apiGetOrNull<T>(path: string): Promise<T | null> {
+  try {
+    return await apiGet<T>(path);
+  } catch (error) {
+    if (
+      error instanceof ApiError &&
+      (error.status === 404 || error.status === 400)
+    ) {
+      return null;
+    }
+    throw error;
+  }
+}
