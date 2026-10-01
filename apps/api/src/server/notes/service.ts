@@ -117,50 +117,109 @@ export async function getNoteById(id: number) {
   });
 }
 
+// 노트를 넣으려는 묶음이 없을 때 던진다. API에서 400으로 응답한다.
+export class SeriesNotFoundError extends Error {
+  constructor(readonly seriesId: number) {
+    super(`${seriesId}번 묶음을 찾을 수 없습니다.`);
+  }
+}
+
+// 트랜잭션 안에서 쓰는 Prisma 클라이언트
+type Tx = Prisma.TransactionClient;
+
+// 묶음의 맨 뒤 번호 + 1. 묶음이 없으면 SeriesNotFoundError
+// SQL: SELECT MAX(series_order) FROM notes WHERE series_id = ?
+async function nextSeriesOrder(tx: Tx, seriesId: number) {
+  const series = await tx.series.findUnique({
+    where: { id: seriesId },
+    select: { id: true },
+  });
+  if (!series) throw new SeriesNotFoundError(seriesId);
+
+  const { _max } = await tx.note.aggregate({
+    where: { seriesId },
+    _max: { seriesOrder: true },
+  });
+  return (_max.seriesOrder ?? 0) + 1;
+}
+
+// 노트가 묶음에서 빠지면(삭제, 다른 묶음으로 이동, 묶음 빼기) 뒤에 있던 노트들의 번호를 1씩 당긴다.
+// 1, 2, 3, 4에서 2가 빠지면 1, 3, 4가 아니라 1, 2, 3이 되도록 (읽기 페이지의 "N번째"가 맞게)
+// SQL: UPDATE notes SET series_order = series_order - 1 WHERE series_id = ? AND series_order > ?
+async function closeSeriesGap(tx: Tx, seriesId: number, removedOrder: number) {
+  await tx.note.updateMany({
+    where: { seriesId, seriesOrder: { gt: removedOrder } },
+    data: { seriesOrder: { decrement: 1 } },
+  });
+}
+
 // 새 노트를 만든다. input은 route.ts에서 zod 규칙으로 이미 검사한 값이다.
+// seriesId가 있으면 그 묶음의 맨 뒤 번호로 넣는다.
 // id, createdAt, updatedAt, pinned는 DB가 기본값으로 채운다.
+//
+// $transaction: "맨 뒤 번호 알아내기 → 저장"을 하나로 묶는다. 중간에 실패하면 전부 없던 일이 된다.
 export async function createNote(input: CreateNoteInput) {
-  return prisma.note.create({
-    data: { title: input.title, content: input.content },
-    select: noteDetailSelect,
+  return prisma.$transaction(async (tx) => {
+    const seriesId = input.seriesId ?? null;
+    const seriesOrder = seriesId ? await nextSeriesOrder(tx, seriesId) : null;
+
+    return tx.note.create({
+      data: {
+        title: input.title,
+        content: input.content,
+        seriesId,
+        seriesOrder,
+      },
+      select: noteDetailSelect,
+    });
   });
 }
 
 // 노트를 고친다. input에 있는 칸만 바뀐다(updatedAt은 Prisma가 자동으로 갱신).
 // 그 id의 노트가 없으면 null을 돌려준다 → API에서 404로 응답한다.
+//
+// 묶음(seriesId)이 바뀌면:
+//   같은 묶음 그대로 → 번호 그대로
+//   다른 묶음으로   → 원래 묶음의 빈자리를 당기고, 새 묶음의 맨 뒤로
+//   묶음 빼기(null) → 원래 묶음의 빈자리를 당기고, 번호를 비운다
 export async function updateNote(id: number, input: UpdateNoteInput) {
-  try {
-    return await prisma.note.update({
+  return prisma.$transaction(async (tx) => {
+    const current = await tx.note.findUnique({
       where: { id },
-      data: input,
-      select: noteDetailSelect,
+      select: { seriesId: true, seriesOrder: true },
     });
-  } catch (error) {
-    // P2025: "고치려는 줄을 찾을 수 없다"는 Prisma 에러 코드
-    if (
-      error instanceof Prisma.PrismaClientKnownRequestError &&
-      error.code === "P2025"
-    ) {
-      return null;
+    if (!current) return null;
+
+    const { seriesId, ...fields } = input;
+    const data: Prisma.NoteUncheckedUpdateInput = { ...fields };
+
+    if (seriesId !== undefined && seriesId !== current.seriesId) {
+      if (current.seriesId !== null && current.seriesOrder !== null) {
+        await closeSeriesGap(tx, current.seriesId, current.seriesOrder);
+      }
+      data.seriesId = seriesId;
+      data.seriesOrder = seriesId ? await nextSeriesOrder(tx, seriesId) : null;
     }
-    throw error;
-  }
+
+    return tx.note.update({ where: { id }, data, select: noteDetailSelect });
+  });
 }
 
 // 노트를 지운다. 지웠으면 true, 그 id의 노트가 없으면 false.
 // 진짜 삭제(hard delete)다. 되돌릴 수 없으므로 화면에서 한 번 더 확인받는다.
+// 묶음에 속한 노트였다면 뒤에 있던 노트들의 번호를 당긴다.
 export async function deleteNote(id: number) {
-  try {
-    await prisma.note.delete({ where: { id } });
-    return true;
-  } catch (error) {
-    // P2025: 지우려는 줄을 찾을 수 없음
-    if (
-      error instanceof Prisma.PrismaClientKnownRequestError &&
-      error.code === "P2025"
-    ) {
-      return false;
+  return prisma.$transaction(async (tx) => {
+    const current = await tx.note.findUnique({
+      where: { id },
+      select: { seriesId: true, seriesOrder: true },
+    });
+    if (!current) return false;
+
+    await tx.note.delete({ where: { id } });
+    if (current.seriesId !== null && current.seriesOrder !== null) {
+      await closeSeriesGap(tx, current.seriesId, current.seriesOrder);
     }
-    throw error;
-  }
+    return true;
+  });
 }

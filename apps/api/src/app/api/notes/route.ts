@@ -1,7 +1,11 @@
 import { parseBody } from "@/lib/parse-body";
 import { withErrorHandling } from "@/lib/with-error-handling";
 import { createNoteSchema, listNotesQuerySchema } from "@/server/notes/schema";
-import { createNote, listNotes } from "@/server/notes/service";
+import {
+  createNote,
+  listNotes,
+  SeriesNotFoundError,
+} from "@/server/notes/service";
 
 // GET /api/notes?q=검색어&sort=latest|oldest&limit=20&cursor=...
 // 노트 목록을 한 묶음씩 조회한다 (커서 페이지네이션). 본문 대신 요약(excerpt)만 담는다.
@@ -36,8 +40,16 @@ export const POST = withErrorHandling(async (request: Request) => {
   const parsed = await parseBody(request, createNoteSchema);
   if (!parsed.success) return parsed.response;
 
-  // ③ DB에 저장
-  const note = await createNote(parsed.data);
+  // ③ DB에 저장. 없는 묶음(seriesId)에 넣으려고 하면 400
+  let note;
+  try {
+    note = await createNote(parsed.data);
+  } catch (error) {
+    if (error instanceof SeriesNotFoundError) {
+      return Response.json({ message: error.message }, { status: 400 });
+    }
+    throw error;
+  }
 
   // ④ 201 Created: "새로 만들었다"는 뜻. Location 헤더에 새 노트의 주소를 알려준다
   return Response.json(note, {

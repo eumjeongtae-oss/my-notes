@@ -1,7 +1,12 @@
 import { parseBody } from "@/lib/parse-body";
 import { withErrorHandling } from "@/lib/with-error-handling";
 import { noteIdSchema, updateNoteSchema } from "@/server/notes/schema";
-import { deleteNote, getNoteById, updateNote } from "@/server/notes/service";
+import {
+  deleteNote,
+  getNoteById,
+  SeriesNotFoundError,
+  updateNote,
+} from "@/server/notes/service";
 
 type Context = RouteContext<"/api/notes/[id]">;
 
@@ -63,7 +68,16 @@ export const PATCH = withErrorHandling(
     const parsedBody = await parseBody(request, updateNoteSchema);
     if (!parsedBody.success) return parsedBody.response;
 
-    const note = await updateNote(parsedId.id, parsedBody.data);
+    // 없는 묶음(seriesId)으로 옮기려고 하면 400
+    let note;
+    try {
+      note = await updateNote(parsedId.id, parsedBody.data);
+    } catch (error) {
+      if (error instanceof SeriesNotFoundError) {
+        return Response.json({ message: error.message }, { status: 400 });
+      }
+      throw error;
+    }
     if (!note) return notFound(parsedId.id);
 
     return Response.json(note);

@@ -107,3 +107,21 @@ Content-Type: application/json
 {
   "name": "Docker 공부"
 }
+
+### 노트를 묶음에 넣어 저장 → 그 묶음의 맨 뒤 번호(seriesOrder)로 들어간다
+POST {{baseUrl}}/api/notes
+Content-Type: application/json
+
+{
+  "title": "묶음에 넣은 노트",
+  "content": "본문",
+  "seriesId": 2
+}
+
+### 노트를 묶음에서 빼기 → 원래 묶음의 뒤 번호들이 당겨진다
+PATCH {{baseUrl}}/api/notes/1
+Content-Type: application/json
+
+{
+  "seriesId": null
+}

@@ -91,6 +91,7 @@ velog 형식의 화면으로 나만 보는 개인 마크다운 노트 앱. 계�
   - `db.ts`: 앱 전체가 쓰는 Prisma 클라이언트 하나 (`server-only`, 개발 환경 SQL 로그)
   - `prisma-client.ts`: Prisma 클라이언트를 만드는 방법 (앱과 seed가 공유)
   - `notes/service.ts`: 노트 데이터 접근 (서비스). DB에서 무엇을 가져올지만 알고 HTTP는 모른다
+    - 묶음 순서(`seriesOrder`)는 서버가 정한다: 넣으면 맨 뒤, 빠지면(삭제, 이동, 빼기) 뒤 번호를 당겨 항상 1, 2, 3처럼 빈틈없게. 여러 단계를 바꾸는 작업은 `prisma.$transaction`으로 묶는다
   - `notes/schema.ts`: 노트 API가 받는 입력 규칙 (zod). 숫자 제한은 `schema.prisma`와 맞춘다
   - `series/service.ts`, `series/schema.ts`: 묶음(series) 조회
   - 도메인(notes, series 등)마다 폴더를 두고 `service.ts`와 `schema.ts`로 나눈다
