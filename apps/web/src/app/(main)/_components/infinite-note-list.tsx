@@ -9,6 +9,7 @@ import { useInfiniteQuery } from "@tanstack/react-query";
 import { useEffect, useRef } from "react";
 
 import { getNotesPage } from "@/api/browser";
+import { noteKeys } from "@/api/query-keys";
 import type { NotesPage } from "@/api/types";
 import type { NoteSort, NoteView } from "@/lib/note-list-params";
 
@@ -36,7 +37,7 @@ export function InfiniteNoteList({
     isFetchNextPageError,
   } = useInfiniteQuery({
     // 정렬마다 따로 보관한다 (최신순 목록과 오래된순 목록은 다른 데이터)
-    queryKey: ["notes", sort],
+    queryKey: noteKeys.list(sort),
     // pageParam: 이번에 가져올 묶음의 커서. 첫 묶음은 null
     queryFn: ({ pageParam }) => getNotesPage(sort, pageParam),
     initialPageParam: null as string | null,

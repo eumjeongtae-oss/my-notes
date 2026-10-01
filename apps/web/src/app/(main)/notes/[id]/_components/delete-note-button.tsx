@@ -5,13 +5,14 @@
 // 확인 창은 HTML 기본 <dialog>를 쓴다. showModal()로 열면 브라우저가 알아서
 // 뒤 화면 클릭 막기, Tab 포커스를 창 안에 가두기, Esc로 닫기, 반투명 배경(::backdrop)을 해 준다.
 // div로 직접 만들면 이 접근성 기능을 전부 손으로 구현해야 한다.
-import { useMutation } from "@tanstack/react-query";
+import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { LoaderCircle } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { useRef } from "react";
 import { toast } from "sonner";
 
 import { deleteNote } from "@/api/browser";
+import { noteKeys } from "@/api/query-keys";
 
 export function DeleteNoteButton({
   noteId,
@@ -23,10 +24,13 @@ export function DeleteNoteButton({
   const dialogRef = useRef<HTMLDialogElement>(null);
   const router = useRouter();
 
+  const queryClient = useQueryClient();
   const deleteMutation = useMutation({
     mutationFn: () => deleteNote(noteId),
     // 지웠으면 토스트를 띄우고 홈으로 이동한다. replace: 뒤로 가기로 지운 노트 페이지에 돌아오지 않게
     onSuccess: () => {
+      // 홈 목록 기억을 지운다. 지우지 않으면 홈에 지운 노트가 남아 보인다
+      queryClient.removeQueries({ queryKey: noteKeys.lists() });
       toast.success("노트를 삭제했어요");
       router.replace("/");
     },
