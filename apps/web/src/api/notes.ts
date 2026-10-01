@@ -5,7 +5,8 @@ import { cache } from "react";
 
 import type { NoteSort } from "@/lib/note-list-params";
 
-import { ApiError, apiGet } from "./client";
+import { apiGet } from "./client";
+import { ApiError } from "./errors";
 
 // 백엔드가 보내는 JSON 모양. JSON에는 날짜 타입이 없어서 날짜는 문자열로 온다.
 type NoteResponse = {
