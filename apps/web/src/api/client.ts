@@ -5,6 +5,8 @@
 // 브라우저에서 호출하는 함수(저장 버튼 등)는 browser.ts에 있다.
 import "server-only";
 
+import { connection } from "next/server";
+
 import { ApiError } from "./errors";
 
 function getApiUrl() {
@@ -19,6 +21,10 @@ function getApiUrl() {
 
 // GET 요청을 보내고 JSON을 돌려준다. 실패(4xx, 5xx)하면 ApiError를 던진다.
 export async function apiGet<T>(path: string): Promise<T> {
+  // 사용자가 요청했을 때만 API를 부른다 (빌드할 때 미리 불러서 HTML로 굳히지 않게).
+  // 이게 없으면 URL 값을 안 쓰는 페이지(/series)는 빌드 때 목록이 고정되어 새 묶음이 안 보인다
+  await connection();
+
   const response = await fetch(`${getApiUrl()}${path}`);
 
   if (!response.ok) {
