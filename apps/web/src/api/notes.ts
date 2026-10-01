@@ -3,6 +3,8 @@ import "server-only";
 
 import { cache } from "react";
 
+import type { NoteSort } from "@/lib/note-list-params";
+
 import { ApiError, apiGet } from "./client";
 
 // 백엔드가 보내는 JSON 모양. JSON에는 날짜 타입이 없어서 날짜는 문자열로 온다.
@@ -52,3 +54,28 @@ export const getNote = cache(async (id: string): Promise<Note | null> => {
     throw error;
   }
 });
+
+// 목록 API가 보내는 노트 하나의 모양. 본문(content) 대신 요약(excerpt)만 온다.
+type NoteSummaryResponse = {
+  id: number;
+  title: string;
+  excerpt: string;
+  updatedAt: string;
+  series: { id: number; name: string } | null;
+};
+
+export type NoteSummary = Omit<NoteSummaryResponse, "updatedAt"> & {
+  updatedAt: Date;
+};
+
+// GET /api/notes?sort=latest|oldest
+// 목록 API는 { items: [...] }로 감싸서 보낸다 (무한스크롤 때 nextCursor가 추가될 자리).
+export async function getNotes(sort: NoteSort): Promise<NoteSummary[]> {
+  const { items } = await apiGet<{ items: NoteSummaryResponse[] }>(
+    `/api/notes?sort=${sort}`,
+  );
+  return items.map((item) => ({
+    ...item,
+    updatedAt: new Date(item.updatedAt),
+  }));
+}

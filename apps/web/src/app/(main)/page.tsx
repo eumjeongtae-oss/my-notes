@@ -1,5 +1,5 @@
+import { getNotes } from "@/api/notes";
 import { parseSort, parseView } from "@/lib/note-list-params";
-import { getNotes } from "@/server/notes";
 
 import { EmptyNotes } from "./_components/empty-notes";
 import { NoteCard } from "./_components/note-card";
@@ -9,7 +9,7 @@ export default async function HomePage({ searchParams }: PageProps<"/">) {
   const params = await searchParams;
   const view = parseView(params.view);
   const sort = parseSort(params.sort);
-  const notes = await getNotes({ sort });
+  const notes = await getNotes(sort);
 
   if (notes.length === 0) {
     return (

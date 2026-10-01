@@ -1,4 +1,5 @@
-import type { NoteSort } from "@/server/notes";
+// 홈 목록 정렬. 백엔드 GET /api/notes?sort= 에 그대로 넘긴다.
+export type NoteSort = "latest" | "oldest";
 
 // 홈 목록의 보기 방식과 정렬 순서를 URL 쿼리(?view=grid&sort=oldest)로 관리한다.
 // URL은 사용자가 마음대로 바꿀 수 있으므로, 모르는 값이 들어오면 기본값으로 처리한다.

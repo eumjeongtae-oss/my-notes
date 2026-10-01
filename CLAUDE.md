@@ -13,7 +13,7 @@ velog 형식의 화면으로 나만 보는 개인 마크다운 노트 앱. 계�
 - `apps/web`: 프론트 Next.js (포트 3000). 화면만 담당하고 **DB나 백엔드 코드를 import하지 않는다.** 데이터는 오직 REST API로 주고받는다
 - `apps/api`: 백엔드 Next.js (포트 4000). Route Handler로 REST API를 만들고 Prisma로 MySQL에 접근한다
 
-> 🚧 전환 중 (`chore/monorepo` 브랜치): DB 코드는 `apps/api`로 옮겼다. 화면은 아직 `apps/web/src/server/notes.ts`의 가짜 데이터를 쓴다. 다음 단계에서 조회 API를 만들고 화면이 API를 호출하게 바꾼다.
+> 🚧 전환 중 (`chore/monorepo` 브랜치): 홈과 읽기 페이지는 API를 쓴다. 글쓰기(수정 모드)만 아직 `apps/web/src/server/notes.ts`의 가짜 데이터를 쓴다.
 
 ## 기술 스택
 
@@ -56,8 +56,8 @@ velog 형식의 화면으로 나만 보는 개인 마크다운 노트 앱. 계�
   - `client.ts`: 공통 호출 함수 (`API_URL` 붙이기, 실패 시 `ApiError`)
   - `notes.ts`: 노트 API. JSON의 날짜 문자열을 `Date`로 바꿔서 돌려준다
   - 지금은 `server-only`(서버 컴포넌트 전용). 브라우저용 호출은 React Query 도입 때 추가
-- `src/server/notes.ts`: 🚧 임시 가짜 데이터. 화면을 `src/api/`로 옮기면 삭제
-- `src/lib/`: 서버와 브라우저 어디서나 쓰는 순수 함수 (`format.ts`, `markdown.ts` 등)
+- `src/server/notes.ts`: 🚧 임시 가짜 데이터. 글쓰기 화면만 쓰고 있다. 글쓰기를 API로 옮기면 삭제
+- `src/lib/`: 서버와 브라우저 어디서나 쓰는 순수 함수 (`format.ts`: 날짜 표시, `note-list-params.ts`: 홈 보기 방식과 정렬 URL 해석)
 
 ## 구조: apps/api (백엔드)
 
