@@ -5,7 +5,7 @@ import "server-only";
 
 import { getExcerpt } from "@/lib/markdown";
 
-import { prisma } from "./db";
+import { prisma } from "../db";
 
 export type NoteSort = "latest" | "oldest";
 

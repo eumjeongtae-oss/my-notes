@@ -17,6 +17,7 @@ velog 형식의 화면으로 나만 보는 개인 마크다운 노트 앱. 계�
 ## 기술 스택
 
 - Next.js 16 (App Router), React 19, TypeScript, Tailwind CSS 4, pnpm
+- 백엔드 입력 검증은 zod 4
 - DB는 MySQL 8, ORM은 Prisma다 (팀 프로젝트와 같은 스택이라 선택. 다른 DB나 ORM을 제안하지 않는다)
 - 개발용 MySQL은 Docker Compose로 로컬에서 띄운다
 
@@ -73,7 +74,9 @@ velog 형식의 화면으로 나만 보는 개인 마크다운 노트 앱. 계�
 - `src/server/`: 서버 전용 코드
   - `db.ts`: 앱 전체가 쓰는 Prisma 클라이언트 하나 (`server-only`, 개발 환경 SQL 로그)
   - `prisma-client.ts`: Prisma 클라이언트를 만드는 방법 (앱과 seed가 공유)
-  - `notes.ts`: 노트 데이터 접근 (서비스). DB에서 무엇을 가져올지만 알고 HTTP는 모른다
+  - `notes/service.ts`: 노트 데이터 접근 (서비스). DB에서 무엇을 가져올지만 알고 HTTP는 모른다
+  - `notes/schema.ts`: 노트 API가 받는 입력 규칙 (zod). 숫자 제한은 `schema.prisma`와 맞춘다
+  - 도메인(notes, series 등)마다 폴더를 두고 `service.ts`와 `schema.ts`로 나눈다
 
 ## 규칙
 

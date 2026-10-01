@@ -1,5 +1,5 @@
 import { withErrorHandling } from "@/lib/with-error-handling";
-import { getNoteById } from "@/server/notes";
+import { getNoteById } from "@/server/notes/service";
 
 // MySQL INT 칸의 최댓값. 이보다 큰 id는 존재할 수 없다.
 const MAX_INT = 2_147_483_647;

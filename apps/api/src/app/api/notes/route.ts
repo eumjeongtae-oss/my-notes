@@ -1,5 +1,5 @@
 import { withErrorHandling } from "@/lib/with-error-handling";
-import { listNotes, type NoteSort } from "@/server/notes";
+import { listNotes, type NoteSort } from "@/server/notes/service";
 
 const SORTS: NoteSort[] = ["latest", "oldest"];
 
