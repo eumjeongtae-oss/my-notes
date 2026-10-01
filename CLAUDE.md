@@ -52,7 +52,7 @@ velog 형식의 화면으로 나만 보는 개인 마크다운 노트 앱. 계�
 - `src/app/(main)/`: 헤더가 있는 화면들 (홈, 읽기). 라우트 그룹이라 URL에는 나타나지 않음
 - `src/app/_components/providers.tsx`: React Query Provider (`"use client"`). 루트 `layout.tsx`가 감싼다. 서버는 요청마다, 브라우저는 하나의 QueryClient
 - `src/app/icon.svg`: 파비콘 (Next.js 파일 규칙). 헤더 로고 `(main)/_components/logo.tsx`와 같은 모양이라 함께 고친다
-- 화면은 velog 모티브: 카드 목록 홈, 읽기 페이지, 헤더 없는 전체 화면 글쓰기(`/write`, 왼쪽 에디터 + 오른쪽 미리보기)
+- 화면은 velog 모티브: 목록형 홈(카드형 보기는 없음), 읽기 페이지, 헤더 없는 전체 화면 글쓰기(`/write`, 왼쪽 에디터 + 오른쪽 미리보기)
 - 컴포넌트 위치는 colocation 방식이다 (파일명은 kebab-case, export는 named export)
   - 한 라우트(그룹)에서만 쓰면 그 폴더의 `_components/`에 둔다 (예: `src/app/(main)/_components/header.tsx`). `_`로 시작하는 폴더는 라우팅에서 제외된다
   - 여러 라우트에서 같이 쓰면 `src/components/`에 둔다 (예: `markdown-preview.tsx`)
@@ -65,7 +65,7 @@ velog 형식의 화면으로 나만 보는 개인 마크다운 노트 앱. 계�
   - `browser.ts`: 브라우저(클라이언트 컴포넌트)에서 부르는 함수. `NEXT_PUBLIC_API_URL` 사용
   - `query-keys.ts`: React Query 이름표(query key). 문자열을 직접 쓰지 않고 `noteKeys`를 쓴다
   - **노트를 저장, 수정, 삭제한 뒤에는 `queryClient.removeQueries({ queryKey: noteKeys.lists() })`로 홈 목록 기억을 지운다.** 안 지우면 홈에 예전 목록이 보인다
-- `src/lib/`: 서버와 브라우저 어디서나 쓰는 순수 함수 (`format.ts`: 날짜 표시, `note-list-params.ts`: 홈 보기 방식과 정렬 URL 해석)
+- `src/lib/`: 서버와 브라우저 어디서나 쓰는 순수 함수 (`format.ts`: 날짜 표시, `note-list-params.ts`: 홈 검색어와 정렬 URL 해석)
 
 ## 구조: apps/api (백엔드)
 

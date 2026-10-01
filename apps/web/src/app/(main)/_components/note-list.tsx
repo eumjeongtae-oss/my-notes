@@ -1,7 +1,7 @@
 import { SearchX } from "lucide-react";
 
 import { getNotes } from "@/api/notes";
-import type { NoteSort, NoteView } from "@/lib/note-list-params";
+import type { NoteSort } from "@/lib/note-list-params";
 
 import { EmptyNotes } from "./empty-notes";
 import { InfiniteNoteList } from "./infinite-note-list";
@@ -9,15 +9,7 @@ import { InfiniteNoteList } from "./infinite-note-list";
 // 홈의 노트 목록 (제목 + 목록). 첫 묶음은 서버에서 가져와 빠르게 그리고,
 // 그다음 묶음부터는 InfiniteNoteList(클라이언트)가 스크롤에 맞춰 가져온다.
 // API를 기다리는 부분이라 홈 page.tsx에서 <Suspense>로 감싼다.
-export async function NoteList({
-  q,
-  view,
-  sort,
-}: {
-  q: string;
-  view: NoteView;
-  sort: NoteSort;
-}) {
+export async function NoteList({ q, sort }: { q: string; sort: NoteSort }) {
   const firstPage = await getNotes(sort, q);
 
   if (firstPage.items.length === 0) {
@@ -35,7 +27,7 @@ export async function NoteList({
         </span>
       </h1>
 
-      <InfiniteNoteList q={q} view={view} sort={sort} initialPage={firstPage} />
+      <InfiniteNoteList q={q} sort={sort} initialPage={firstPage} />
     </>
   );
 }

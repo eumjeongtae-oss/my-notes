@@ -11,7 +11,7 @@ import { useEffect, useRef } from "react";
 import { getNotesPage } from "@/api/browser";
 import { noteKeys } from "@/api/query-keys";
 import type { NotesPage } from "@/api/types";
-import type { NoteSort, NoteView } from "@/lib/note-list-params";
+import type { NoteSort } from "@/lib/note-list-params";
 
 import { NoteCard } from "./note-card";
 import { CardSkeleton } from "./note-list-skeleton";
@@ -22,12 +22,10 @@ const PREFETCH_MARGIN = "0px 0px 600px 0px";
 
 export function InfiniteNoteList({
   q,
-  view,
   sort,
   initialPage,
 }: {
   q: string;
-  view: NoteView;
   sort: NoteSort;
   initialPage: NotesPage;
 }) {
@@ -71,25 +69,19 @@ export function InfiniteNoteList({
     return () => observer.disconnect();
   }, [hasNextPage, isFetchingNextPage, fetchNextPage]);
 
-  const listClassName =
-    view === "grid"
-      ? // 화면 폭에 따라 한 줄에 1개 → 2개(sm, 640px 이상) → 3개(lg, 1024px 이상)
-        "grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3"
-      : "space-y-4";
-
   return (
     <>
-      <div className={`mt-6 ${listClassName}`}>
+      <div className="mt-6 space-y-4">
         {notes.map((note) => (
-          <NoteCard key={note.id} note={note} variant={view} />
+          <NoteCard key={note.id} note={note} />
         ))}
 
         {/* 다음 묶음을 불러오는 동안 목록 아래에 카드 뼈대를 보여준다 */}
         {isFetchingNextPage &&
-          Array.from({ length: view === "grid" ? 3 : 2 }, (_, index) => (
+          Array.from({ length: 2 }, (_, index) => (
             <div key={index} role="status" className="animate-pulse">
               <span className="sr-only">노트를 더 불러오는 중입니다</span>
-              <CardSkeleton view={view} />
+              <CardSkeleton />
             </div>
           ))}
       </div>
