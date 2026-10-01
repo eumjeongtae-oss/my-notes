@@ -7,7 +7,7 @@ import CodeMirror, {
   type ReactCodeMirrorRef,
 } from "@uiw/react-codemirror";
 import { useMutation } from "@tanstack/react-query";
-import { ArrowLeft } from "lucide-react";
+import { ArrowLeft, LoaderCircle } from "lucide-react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useRef, useState } from "react";
@@ -117,9 +117,20 @@ export function NoteEditor({
               onClick={() => saveMutation.mutate({ title, content })}
               // 저장 중에는 두 번 누르지 못하게 막는다
               disabled={saveMutation.isPending}
-              className="rounded-md bg-emerald-500 px-5 py-2 text-lg font-bold text-white hover:bg-emerald-400 disabled:cursor-not-allowed disabled:opacity-50"
+              // aria-busy: 스크린리더에 "처리 중"이라고 알려준다
+              aria-busy={saveMutation.isPending}
+              // w-36: 글자가 "저장" → "저장 중…"으로 바뀌어도 버튼 폭이 그대로라 옆의 에러 메시지가 들썩이지 않는다
+              className="inline-flex w-36 items-center justify-center gap-2 rounded-md bg-emerald-500 py-2 text-lg font-bold text-white hover:bg-emerald-400 disabled:cursor-not-allowed disabled:opacity-50"
             >
-              {saveMutation.isPending ? "저장 중…" : "저장"}
+              {saveMutation.isPending ? (
+                <>
+                  {/* animate-spin: Tailwind의 계속 회전하는 애니메이션 */}
+                  <LoaderCircle className="size-5 animate-spin" />
+                  저장 중…
+                </>
+              ) : (
+                "저장"
+              )}
             </button>
           </div>
         </footer>
