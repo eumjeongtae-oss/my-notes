@@ -17,6 +17,7 @@ velog 형식의 화면으로 나만 보는 개인 마크다운 노트 앱. 계�
 ## 기술 스택
 
 - Next.js 16 (App Router), React 19, TypeScript, Tailwind CSS 4, pnpm
+- 프론트에서 브라우저가 API를 부를 때(저장 버튼, 무한스크롤, 검색)는 React Query(TanStack Query v5). 첫 화면은 서버 컴포넌트에서 조회한다
 - 백엔드 입력 검증은 zod 4
 - DB는 MySQL 8, ORM은 Prisma다 (팀 프로젝트와 같은 스택이라 선택. 다른 DB나 ORM을 제안하지 않는다)
 - 개발용 MySQL은 Docker Compose로 로컬에서 띄운다
@@ -46,6 +47,7 @@ velog 형식의 화면으로 나만 보는 개인 마크다운 노트 앱. 계�
 ## 구조: apps/web (프론트)
 
 - `src/app/(main)/`: 헤더가 있는 화면들 (홈, 읽기). 라우트 그룹이라 URL에는 나타나지 않음
+- `src/app/_components/providers.tsx`: React Query Provider (`"use client"`). 루트 `layout.tsx`가 감싼다. 서버는 요청마다, 브라우저는 하나의 QueryClient
 - `src/app/icon.svg`: 파비콘 (Next.js 파일 규칙). 헤더 로고 `(main)/_components/logo.tsx`와 같은 모양이라 함께 고친다
 - 화면은 velog 모티브: 카드 목록 홈, 읽기 페이지, 헤더 없는 전체 화면 글쓰기(`/write`, 왼쪽 에디터 + 오른쪽 미리보기)
 - 컴포넌트 위치는 colocation 방식이다 (파일명은 kebab-case, export는 named export)
