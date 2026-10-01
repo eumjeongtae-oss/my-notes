@@ -47,7 +47,9 @@ async function apiSend<T>(
   return response.json();
 }
 
-type NoteInput = { title: string; content: string };
+// seriesName: 넣을 묶음의 이름. 없는 이름이면 서버가 새로 만든다. 빈 글자면 묶음 없음.
+// 순서는 서버가 정한다(맨 뒤)
+type NoteInput = { title: string; content: string; seriesName: string };
 
 // 저장한 뒤 그 노트의 읽기 페이지로 이동하려고 응답에서 id만 쓴다.
 

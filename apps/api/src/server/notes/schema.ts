@@ -11,6 +11,8 @@ import { decodeNoteCursor } from "./cursor";
 const TITLE_MAX = 200;
 // content: MEDIUMTEXT(최대 약 16MB). 한글은 한 글자에 3바이트라서 넉넉하게 글자 수로 제한한다
 const CONTENT_MAX = 100_000;
+// series.name: VARCHAR(100)
+const SERIES_NAME_MAX = 100;
 
 // POST /api/notes 로 새 노트를 만들 때 받는 값
 export const createNoteSchema = z.object({
@@ -32,6 +34,20 @@ export const createNoteSchema = z.object({
       CONTENT_MAX,
       `본문은 ${CONTENT_MAX.toLocaleString()}자까지 쓸 수 있습니다.`,
     ),
+  // 넣을 묶음(series)의 이름. 그 이름의 묶음이 없으면 서버가 새로 만든다 (velog 방식).
+  // null이나 빈 글자("", "   ")면 묶음에 넣지 않는다.
+  // 순서(seriesOrder)는 받지 않고 서버가 정한다 (그 묶음의 맨 뒤)
+  seriesName: z
+    .string("묶음 이름은 글자여야 합니다.")
+    .trim()
+    .max(
+      SERIES_NAME_MAX,
+      `묶음 이름은 ${SERIES_NAME_MAX}자까지 쓸 수 있습니다.`,
+    )
+    .nullable()
+    .optional()
+    // 빈 글자는 "묶음 없음"(null)으로 바꾼다. undefined(안 보냄)는 그대로 둔다
+    .transform((value) => (value === "" ? null : value)),
 });
 
 // 스키마에서 TypeScript 타입을 뽑아낸다. 규칙과 타입을 따로 적지 않아도 된다
@@ -45,7 +61,7 @@ export const updateNoteSchema = createNoteSchema
   .partial()
   // 아무 칸도 안 보내면({}) 고칠 게 없으므로 막는다
   .refine((input) => Object.keys(input).length > 0, {
-    error: "고칠 내용(title 또는 content)을 하나 이상 보내 주세요.",
+    error: "고칠 내용(title, content, seriesName)을 하나 이상 보내 주세요.",
   });
 
 export type UpdateNoteInput = z.infer<typeof updateNoteSchema>;

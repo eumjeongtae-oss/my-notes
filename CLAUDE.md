@@ -6,7 +6,9 @@ velog 형식의 화면으로 나만 보는 개인 마크다운 노트 앱. 계�
 
 화면에 보이는 사이트 이름은 **차곡 (Chagok)** 이다. 프로젝트(레포, 폴더, 패키지) 이름은 그대로 `my-notes`다.
 
-노트를 순서대로 묶는 기능(velog의 시리즈)은 **화면에서 "묶음"**이라고 부른다. 코드, API, DB에서는 그대로 `series`다 (`Series` 모델, `/api/series`, `seriesId`, `seriesOrder`). 순서는 "N번째"로 표시한다.
+노트를 순서대로 묶는 기능(velog의 시리즈)은 **화면에서 "묶음"**이라고 부른다. 코드, API, DB에서는 그대로 `series`다 (`Series` 모델, `/api/series`, `seriesName`, `seriesOrder`). 순서는 "N번째"로 표시한다.
+
+묶음은 velog처럼 **따로 만들거나 지우지 않는다.** 노트를 저장할 때 묶음 이름(`seriesName`)을 보내면 없는 이름은 서버가 새로 만들고, 마지막 노트가 빠지면(삭제, 이동, 빼기) 묶음도 자동으로 지운다. 빈 묶음은 남기지 않는다.
 
 ## 아키텍처
 
@@ -75,6 +77,7 @@ velog 형식의 화면으로 나만 보는 개인 마크다운 노트 앱. 계�
   - URL 값은 `Number()`로 바로 바꾸지 말고 문자열 형식부터 검사한다 (`"1e1"`, `"0x13"`도 숫자로 바뀌어 통과함)
   - 에러 응답 형식: `{ "message": "..." }`. 입력 검증(zod) 실패는 칸별 메시지를 더해 `{ "message", "fieldErrors": { "title": ["..."] } }`
   - 새로 만들면 201 Created와 `Location` 헤더(새 리소스 주소), 지우면 204 No Content(본문 없음)로 응답한다
+  - 중복(@unique) 같은 "지금 데이터와 충돌"은 409 Conflict. 미리 조회하지 말고 만들어 보고 Prisma `P2002`를 잡는다
   - **모든 API 함수는 `withErrorHandling`(`src/lib/with-error-handling.ts`)으로 감싼다** (`export const GET = withErrorHandling(async (request) => ...)`). 예상 못 한 에러는 서버 로그에 원인을 남기고 500 `{ message }`로 응답한다. 에러 내용(DB 주소, SQL)을 응답에 넣지 않는다
   - 400, 404처럼 예상한 에러는 각 API가 직접 응답한다
   - 목록 API는 배열 대신 `{ items }` 객체로 응답한다 (무한스크롤 때 `nextCursor`를 추가할 수 있게)
@@ -90,6 +93,7 @@ velog 형식의 화면으로 나만 보는 개인 마크다운 노트 앱. 계�
   - `db.ts`: 앱 전체가 쓰는 Prisma 클라이언트 하나 (`server-only`, 개발 환경 SQL 로그)
   - `prisma-client.ts`: Prisma 클라이언트를 만드는 방법 (앱과 seed가 공유)
   - `notes/service.ts`: 노트 데이터 접근 (서비스). DB에서 무엇을 가져올지만 알고 HTTP는 모른다
+    - 묶음 순서(`seriesOrder`)는 서버가 정한다: 넣으면 맨 뒤, 빠지면(삭제, 이동, 빼기) 뒤 번호를 당겨 항상 1, 2, 3처럼 빈틈없게. 묶음 생성(`upsert`)과 빈 묶음 삭제도 같은 곳에서 한다. 여러 단계를 바꾸는 작업은 `prisma.$transaction`으로 묶는다
   - `notes/schema.ts`: 노트 API가 받는 입력 규칙 (zod). 숫자 제한은 `schema.prisma`와 맞춘다
   - `series/service.ts`, `series/schema.ts`: 묶음(series) 조회
   - 도메인(notes, series 등)마다 폴더를 두고 `service.ts`와 `schema.ts`로 나눈다

@@ -28,7 +28,8 @@ export const GET = withErrorHandling(async (request: Request) => {
 });
 
 // POST /api/notes
-// 새 노트를 만든다. 본문은 JSON: { "title": "...", "content": "..." }
+// 새 노트를 만든다. 본문은 JSON: { "title": "...", "content": "...", "seriesName": "..." }
+// seriesName은 생략 가능. 그 이름의 묶음이 없으면 새로 만들어서 넣는다
 //   201: 저장된 노트 (GET /api/notes/:id와 같은 모양)
 //   400: JSON이 깨졌거나, 입력 규칙(zod)에 맞지 않음
 export const POST = withErrorHandling(async (request: Request) => {
@@ -36,7 +37,7 @@ export const POST = withErrorHandling(async (request: Request) => {
   const parsed = await parseBody(request, createNoteSchema);
   if (!parsed.success) return parsed.response;
 
-  // ③ DB에 저장
+  // ③ DB에 저장. seriesName의 묶음이 없으면 같이 만든다
   const note = await createNote(parsed.data);
 
   // ④ 201 Created: "새로 만들었다"는 뜻. Location 헤더에 새 노트의 주소를 알려준다

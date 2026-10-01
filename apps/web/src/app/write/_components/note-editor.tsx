@@ -18,6 +18,7 @@ import { noteKeys } from "@/api/query-keys";
 import { MarkdownPreview } from "@/components/markdown-preview";
 
 import { EditorToolbar } from "./editor-toolbar";
+import { SeriesSelect } from "./series-select";
 
 // 컴포넌트 밖에 두어서 렌더링마다 새로 만들지 않는다.
 const extensions = [
@@ -43,6 +44,8 @@ export function NoteEditor({
   initialContent = "",
   exitHref,
   noteId,
+  initialSeriesName,
+  seriesOptions,
 }: {
   initialTitle?: string;
   initialContent?: string;
@@ -50,9 +53,14 @@ export function NoteEditor({
   exitHref: string;
   // 수정할 노트의 id. 있으면 수정(PATCH), 없으면 새 노트(POST)
   noteId?: number;
+  // 처음에 들어 있는 묶음 이름 (수정 중이면 그 노트의 묶음, 새 노트면 빈 글자)
+  initialSeriesName: string;
+  // 기존 묶음 이름들 (서버가 가져와서 넘겨준다)
+  seriesOptions: string[];
 }) {
   const [title, setTitle] = useState(initialTitle);
   const [content, setContent] = useState(initialContent);
+  const [seriesName, setSeriesName] = useState(initialSeriesName);
   // 툴바가 에디터를 조작할 수 있도록 CodeMirror 인스턴스를 ref로 잡아둔다.
   const editorRef = useRef<ReactCodeMirrorRef>(null);
   const router = useRouter();
@@ -61,7 +69,11 @@ export function NoteEditor({
   // 저장 중(isPending), 실패(error), 성공 후 할 일(onSuccess)을 대신 관리해 준다.
   const queryClient = useQueryClient();
   const saveMutation = useMutation({
-    mutationFn: (input: { title: string; content: string }) =>
+    mutationFn: (input: {
+      title: string;
+      content: string;
+      seriesName: string;
+    }) =>
       noteId === undefined ? createNote(input) : updateNote(noteId, input),
     // 저장에 성공하면 토스트를 띄우고 그 노트의 읽기 페이지로 이동한다.
     // (실패 메시지는 토스트 대신 버튼 옆에 남겨서 놓치지 않게 한다)
@@ -116,6 +128,12 @@ export function NoteEditor({
             나가기
           </Link>
           <div className="flex items-center gap-4">
+            {/* 저장할 묶음. 새 이름이면 서버가 만들고, 순서는 그 묶음의 맨 뒤 */}
+            <SeriesSelect
+              options={seriesOptions}
+              value={seriesName}
+              onChange={setSeriesName}
+            />
             {/* 실패 메시지. 백엔드가 보낸 message(예: "제목을 입력해 주세요.")를 그대로 보여준다 */}
             {saveMutation.isError && (
               <p role="alert" className="text-sm text-red-500">
@@ -126,7 +144,9 @@ export function NoteEditor({
             )}
             <button
               type="button"
-              onClick={() => saveMutation.mutate({ title, content })}
+              onClick={() =>
+                saveMutation.mutate({ title, content, seriesName })
+              }
               // 저장 중에는 두 번 누르지 못하게 막는다
               disabled={saveMutation.isPending}
               // aria-busy: 스크린리더에 "처리 중"이라고 알려준다

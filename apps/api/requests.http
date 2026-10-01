@@ -99,3 +99,30 @@ GET {{baseUrl}}/api/series
 
 ### 묶음 하나와 속한 노트들 (순서대로)
 GET {{baseUrl}}/api/series/2
+
+### 노트를 묶음에 넣어 저장 → 그 묶음의 맨 뒤 번호(seriesOrder)로 들어간다
+### 그 이름의 묶음이 없으면 새로 만들어진다 (묶음을 따로 만드는 API는 없다)
+POST {{baseUrl}}/api/notes
+Content-Type: application/json
+
+{
+  "title": "묶음에 넣은 노트",
+  "content": "본문",
+  "seriesName": "Docker 공부"
+}
+
+### 노트를 다른 묶음으로 옮기기 → 새 묶음 맨 뒤로. 원래 묶음은 번호가 당겨지고, 비면 지워진다
+PATCH {{baseUrl}}/api/notes/1
+Content-Type: application/json
+
+{
+  "seriesName": "Docker 공부"
+}
+
+### 노트를 묶음에서 빼기 → 원래 묶음의 뒤 번호들이 당겨진다 (마지막 노트였으면 묶음도 지워진다)
+PATCH {{baseUrl}}/api/notes/1
+Content-Type: application/json
+
+{
+  "seriesName": null
+}
