@@ -59,7 +59,7 @@ apps/api  백엔드 Next.js (포트 4000)  REST API, Prisma, MySQL
       - 백엔드가 꺼졌을 때 에러 화면 (`error.tsx`)
       - 로딩 중 스켈레톤 UI (`loading.tsx`, 홈 카드와 읽기 페이지 모양)
    4. 저장 ✅ / 수정 / 삭제 API + 시리즈 선택 (`POST`, `PATCH`, `DELETE`, zod 입력 검증). 브라우저가 직접 호출하므로 React Query 도입, CORS 설정
-   5. 홈 목록 무한스크롤 (커서 페이지네이션 API)
+   5. 홈 목록 무한스크롤 (커서 페이지네이션 API, useInfiniteQuery, IntersectionObserver). 끝에 닿기 전에 미리 불러오기(rootMargin 약 600px), 불러오는 중에는 아래에 스켈레톤 카드
    6. 검색 (처음엔 LIKE, 이후 MySQL ngram 전문 검색)
    7. 시리즈 화면 (홈 탭, 시리즈 상세, 이전/다음 글)
 3. **로그인**: 백엔드가 Google 로그인을 처리하고, 프론트와 백엔드 사이에 로그인 상태 유지. 허용 이메일 체크, 로그인 페이지, 마이페이지
