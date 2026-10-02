@@ -35,7 +35,7 @@ velog 형식의 화면으로 쓰는 개인 마크다운 노트 앱. 누구나 Go
 - `pnpm dev`: MySQL을 먼저 띄운 뒤(`predev`) 모든 앱의 개발 서버를 동시에 실행 (web: http://localhost:3000, api: http://localhost:4000)
 - `pnpm build` / `pnpm lint` / `pnpm typecheck`: 모든 앱에서 빌드, 린트, 타입 검사
 - `pnpm format` / `pnpm format:check`: 저장소 전체 Prettier (Tailwind 클래스 자동 정렬 포함)
-- `pnpm db:migrate --name 변경내용`: 마이그레이션 만들고 DB에 반영. 이후 `pnpm db:generate`로 클라이언트 코드 재생성 (Prisma 7은 자동 생성하지 않음)
+- `pnpm db:migrate --name 변경내용`: 마이그레이션 만들고 DB에 반영. 이후 `pnpm db:generate`로 클라이언트 코드 재생성 (Prisma 7은 자동 생성하지 않음). **generate 후에는 `pnpm dev`를 다시 켠다.** 개발 서버는 `db.ts`가 `globalThis`에 보관한 예전 클라이언트를 계속 써서 새 모델(`prisma.user` 등)이 없다는 에러가 난다
 - `pnpm db:seed`: 개발용 예시 데이터로 초기화 (기존 데이터 삭제됨)
 - `pnpm db:studio`: 브라우저에서 DB 내용 보기
 
