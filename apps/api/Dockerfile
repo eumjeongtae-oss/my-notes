@@ -35,6 +35,17 @@ ENV NEXT_TELEMETRY_DISABLED=1
 # 진짜 주소는 컨테이너를 실행할 때 환경 변수로 넣는다
 RUN DATABASE_URL="mysql://build:build@localhost:3306/build" pnpm --filter api build
 
+# ---------- 따로 쓰는 단계 migrator: DB 테이블 만들기 (마이그레이션) ----------
+# 최종 이미지(runner)에는 Prisma CLI가 없어서(standalone은 실행에 필요한 것만 담는다) 마이그레이션용 이미지를 따로 만든다.
+# compose.prod.yaml의 migrate 서비스가 target: migrator로 이 단계까지만 빌드해서 쓴다.
+# deps 단계에 Prisma CLI(devDependencies), prisma/migrations, prisma7.config.ts가 모두 있다
+FROM base AS migrator
+COPY --from=deps /app ./
+WORKDIR /app/apps/api
+# migrate deploy: migrations 폴더에서 아직 DB에 적용 안 된 것만 순서대로 실행한다 (이미 적용된 건 건너뜀).
+# 개발용 migrate dev와 달리 새 마이그레이션을 만들거나 DB를 초기화하지 않는다
+CMD ["./node_modules/.bin/prisma", "migrate", "deploy"]
+
 # ---------- 3단계 runner: 실제로 실행할 최종 이미지 ----------
 FROM node:24-alpine AS runner
 WORKDIR /app
