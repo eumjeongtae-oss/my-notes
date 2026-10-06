@@ -14,3 +14,6 @@
 .git
 docs
 **/*.md
+
+# DB 덤프(백업) 파일. 개인 데이터
+backups

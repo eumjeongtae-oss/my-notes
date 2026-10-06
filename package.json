@@ -12,7 +12,8 @@
     "db:migrate": "pnpm --filter api exec prisma migrate dev",
     "db:generate": "pnpm --filter api exec prisma generate",
     "db:seed": "pnpm --filter api exec prisma db seed",
-    "db:studio": "pnpm --filter api exec prisma studio"
+    "db:studio": "pnpm --filter api exec prisma studio",
+    "prod": "docker compose -f compose.prod.yaml --env-file .env.prod"
   },
   "devDependencies": {
     "prettier": "^3.9.9",
