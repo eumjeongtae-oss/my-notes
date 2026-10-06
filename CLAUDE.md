@@ -38,6 +38,7 @@ velog 형식의 화면으로 쓰는 개인 마크다운 노트 앱. 누구나 Go
 - `pnpm db:migrate --name 변경내용`: 마이그레이션 만들고 DB에 반영. 이후 `pnpm db:generate`로 클라이언트 코드 재생성 (Prisma 7은 자동 생성하지 않음). **generate 후에는 `pnpm dev`를 다시 켠다.** 개발 서버는 `db.ts`가 `globalThis`에 보관한 예전 클라이언트를 계속 써서 새 모델(`prisma.user` 등)이 없다는 에러가 난다
 - `pnpm db:seed`: 개발용 예시 데이터로 초기화 (기존 노트와 묶음 삭제됨). 예시 데이터는 가장 먼저 가입한 사용자의 것이 되므로 **먼저 한 번 로그인**해야 한다 (사용자와 세션은 지우지 않는다. **모든 사용자의** 노트와 묶음을 지우므로 개발 DB에서만 쓴다)
 - `pnpm db:studio`: 브라우저에서 DB 내용 보기
+- `docker build -f apps/api/Dockerfile -t my-notes-api .`: api 배포용 이미지 만들기 (맨 끝 `.`: 저장소 루트가 빌드 재료). 실행은 `docker run -p 4001:4000 -e DATABASE_URL=... my-notes-api`. 컨테이너 안의 `localhost`는 컨테이너 자신이라 로컬 MySQL은 `host.docker.internal`로 부른다
 
 작업을 마치면 `typecheck`, `lint`, `format:check`, `build`를 통과시킨다.
 
@@ -98,6 +99,7 @@ velog 형식의 화면으로 쓰는 개인 마크다운 노트 앱. 누구나 Go
 - `requests.http`: API를 직접 호출해 보는 파일 (VS Code REST Client). API를 추가하면 여기에도 예시 요청을 추가한다
 - `prisma/schema.prisma`: DB 설계도(모델). 설정은 `prisma7.config.ts`, 생성 코드는 `src/generated/prisma`(git 제외)
 - `prisma/seed.ts`, `prisma/seed-notes/*.md`: 개발용 예시 데이터
+- `Dockerfile`: 배포용 이미지. 3단계(deps 설치 → builder 빌드 → runner)로 나누고 최종 이미지에는 `.next/standalone`만 담는다 (`next.config.ts`의 `output: "standalone"`, 모노레포라 `outputFileTracingRoot`는 저장소 루트). 비밀 값(`.env`)은 이미지에 넣지 않고 실행할 때 환경 변수로 넣는다 (루트 `.dockerignore`). `next build`가 `db.ts`를 불러오므로 빌드 단계에만 가짜 `DATABASE_URL`을 준다
 - `src/lib/`: DB와 상관없는 코드 (`markdown.ts`: 목록용 요약문, `with-error-handling.ts`: API 공통 에러 처리, `auth-cookies.ts`: 로그인 쿠키 읽기/쓰기, `require-user.ts`: 로그인 확인)
 - `src/server/`: 서버 전용 코드
   - `db.ts`: 앱 전체가 쓰는 Prisma 클라이언트 하나 (`server-only`, 개발 환경 SQL 로그)

@@ -20,11 +20,11 @@ apps/api  백엔드 Next.js (포트 4000)  REST API, Prisma, MySQL
 | 백엔드        | Next.js 16 Route Handler로 REST API (`apps/api`)                      |
 | 스타일        | Tailwind CSS 4, @tailwindcss/typography                               |
 | 에디터        | CodeMirror 6 + react-markdown (remark-gfm)                            |
-| DB            | MySQL 8 (개발은 Docker Compose로 로컬 실행, 배포 DB는 5단계에서 결정) |
+| DB            | MySQL 8 (개발은 Docker Compose로 로컬 실행, 배포는 EC2 안의 컨테이너) |
 | ORM           | Prisma (팀 프로젝트와 같은 스택)                                      |
 | 로그인        | Google 로그인 (누구나 가입), arctic + DB 세션                         |
 | 이미지 저장   | AWS S3 (업로드 권한이 있는 사용자만)                                  |
-| 배포          | AWS EC2 + Docker, GitHub Actions로 자동 배포                          |
+| 배포          | AWS EC2 + Docker Compose, Caddy(HTTPS), GHCR, GitHub Actions          |
 | 패키지 매니저 | pnpm                                                                  |
 
 ## MVP 범위
@@ -70,6 +70,20 @@ apps/api  백엔드 Next.js (포트 4000)  REST API, Prisma, MySQL
    4. ✅ 노트와 묶음에 주인(`userId`) 추가 (기존 노트는 첫 사용자에게 옮기는 데이터 마이그레이션, 묶음 이름은 사람마다 하나), 모든 노트, 묶음 API를 로그인한 사람의 것만 다루게 보호 (남의 노트 id는 404)
    5. ✅ web: 쿠키 전달 (브라우저 요청, 서버 컴포넌트), 로그인 페이지, 헤더의 프로필 메뉴와 로그아웃
 4. **배포**: 프론트와 백엔드를 각각 Docker 이미지로, EC2, 배포용 DB, GitHub Actions, 도메인과 HTTPS. AWS Budgets 알림, 개인정보 처리방침 페이지, Google 앱 게시(테스트 → 프로덕션)
+   - 구성: EC2 한 대(t3.small)에 Docker Compose로 Caddy(HTTPS 자동) + web + api + mysql. 주소는 `chagok.app`(web), `api.chagok.app`(api) 예정
+   - DB는 RDS(월 $20 이상) 대신 EC2 안의 MySQL 컨테이너. 대신 매일 백업을 S3로. 예상 비용 월 약 $25 + 도메인
+   - GitHub 레포: https://github.com/eumjeongtae-oss/my-notes (공개). 커밋 이메일은 GitHub noreply 주소
+   1. ✅ api Docker 이미지 (`output: "standalone"`, multi-stage, root가 아닌 사용자)
+   2. web Docker 이미지 (`NEXT_PUBLIC_API_URL`은 빌드할 때 코드에 박힌다)
+   3. 배포용 compose로 web + api + mysql 함께 띄우기, 마이그레이션 실행 방법, 앱 전용 DB 계정
+   4. 쿠키 도메인(`COOKIE_DOMAIN`): `api.` 주소가 만든 쿠키를 web 주소에서도 보이게
+   5. AWS 계정, 루트 MFA, Budgets 알림
+   6. 도메인 구입, Route 53 연결
+   7. EC2 만들기(보안 그룹, 고정 IP, Docker), 손으로 처음 배포
+   8. Caddy로 HTTPS, Google Console에 운영 리디렉션 URI 추가
+   9. GitHub Actions 자동 배포 (이미지 빌드 → GHCR → EC2)
+   10. DB 매일 백업 → S3
+   11. 개인정보 처리방침 페이지, Google 앱 게시(테스트 → 프로덕션)
 5. **이미지**: S3 업로드 (Presigned URL). 업로드 권한이 있는 사용자만, 한 장 5MB와 사람별 용량 제한. 툴바 이미지 버튼을 파일 선택 업로드로 바꾸고, 드래그/붙여넣기 업로드와 카드 썸네일 추가. 이미지 없이 먼저 배포해서 완성된 앱을 올려 두려고 배포 뒤로 미뤘다
 6. **품질**: 테스트(Vitest, Playwright), PR마다 CI 검사
 
