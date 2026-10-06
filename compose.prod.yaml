@@ -51,7 +51,10 @@ services:
         condition: service_healthy
     environment:
       # 호스트 자리의 mysql: 위의 mysql 서비스 (localhost나 host.docker.internal이 아니다)
-      DATABASE_URL: mysql://${MYSQL_USER}:${MYSQL_PASSWORD}@mysql:3306/${MYSQL_DATABASE}
+      # allowPublicKeyRetrieval: MySQL 8의 기본 로그인 방식(caching_sha2_password)은 암호화(TLS) 없이 처음 접속할 때
+      # 서버의 공개 키로 비밀번호를 감싸서 보낸다. 그 키를 받아 와도 된다는 허락이 없으면 접속이 계속 실패한다.
+      # (개발용 root는 healthcheck가 먼저 로그인해서 서버가 기억해 둔 덕에 이 과정 없이 통과했다)
+      DATABASE_URL: mysql://${MYSQL_USER}:${MYSQL_PASSWORD}@mysql:3306/${MYSQL_DATABASE}?allowPublicKeyRetrieval=true
       CORS_ORIGINS: ${WEB_URL:?.env.prod에 WEB_URL이 필요합니다}
       WEB_URL: ${WEB_URL}
       GOOGLE_CLIENT_ID: ${GOOGLE_CLIENT_ID:?.env.prod에 GOOGLE_CLIENT_ID가 필요합니다}
