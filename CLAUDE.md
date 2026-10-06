@@ -99,7 +99,7 @@ velog 형식의 화면으로 쓰는 개인 마크다운 노트 앱. 누구나 Go
     - 묶음 순서(`seriesOrder`)는 서버가 정한다: 넣으면 맨 뒤, 빠지면(삭제, 이동, 빼기) 뒤 번호를 당겨 항상 1, 2, 3처럼 빈틈없게. 묶음 생성(`upsert`)과 빈 묶음 삭제도 같은 곳에서 한다. 여러 단계를 바꾸는 작업은 `prisma.$transaction`으로 묶는다
   - `notes/schema.ts`: 노트 API가 받는 입력 규칙 (zod). 숫자 제한은 `schema.prisma`와 맞춘다
   - `series/service.ts`, `series/schema.ts`: 묶음(series) 조회
-  - `auth/session.ts`: 로그인 세션 만들기, 확인(남은 기한이 15일 미만이면 30일로 연장), 삭제. 쿠키에는 무작위 토큰, DB(`sessions.id`)에는 그 SHA-256 값만 둔다
+  - `auth/session.ts`: 로그인 세션 만들기, 확인, 삭제. 기한은 로그인부터 **30일 고정**(연장 없음, 지나면 다시 로그인). 다시 로그인할 때 이 브라우저의 예전 세션과 그 사람의 기한 지난 세션을 지운다. 쿠키에는 무작위 토큰, DB(`sessions.id`)에는 그 SHA-256 값만 둔다
   - `auth/google.ts`: arctic(Google OAuth) 설정. `users/service.ts`: Google 사용자 찾기/만들기(`googleId`로 찾는다)
   - **노트, 묶음 서비스 함수는 모두 `userId`를 첫 인자로 받고, 모든 조회와 수정에 `userId` 조건을 붙인다** (`where: { id, userId }`). 하나라도 빠지면 남의 노트가 보인다. 남의 노트, 묶음은 403이 아니라 404로 "없는 것"처럼 응답한다. 묶음 이름은 사람마다 하나(`@@unique([userId, name])`)
   - 도메인(notes, series 등)마다 폴더를 두고 `service.ts`와 `schema.ts`로 나눈다

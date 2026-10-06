@@ -6,13 +6,13 @@
 //   auth.user.id  ← 이 사용자의 노트만 다룬다
 import { validateSessionToken } from "@/server/auth/session";
 
-import { getSessionToken, setSessionCookie } from "./auth-cookies";
+import { getSessionToken } from "./auth-cookies";
 
 export async function requireUser() {
   const token = await getSessionToken();
-  const session = token ? await validateSessionToken(token) : null;
+  const user = token ? await validateSessionToken(token) : null;
 
-  if (!token || !session) {
+  if (!user) {
     return {
       success: false as const,
       response: Response.json(
@@ -22,8 +22,5 @@ export async function requireUser() {
     };
   }
 
-  // 세션 기한이 늘었으면 쿠키 기한도 똑같이 늘린다 (DB와 브라우저의 만료 시각을 맞춘다)
-  if (session.renewed) await setSessionCookie(token, session.expiresAt);
-
-  return { success: true as const, user: session.user };
+  return { success: true as const, user };
 }
