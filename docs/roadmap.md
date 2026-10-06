@@ -74,7 +74,7 @@ apps/api  백엔드 Next.js (포트 4000)  REST API, Prisma, MySQL
    - DB는 RDS(월 $20 이상) 대신 EC2 안의 MySQL 컨테이너. 대신 매일 백업을 S3로. 예상 비용 월 약 $25 + 도메인
    - GitHub 레포: https://github.com/eumjeongtae-oss/my-notes (공개). 커밋 이메일은 GitHub noreply 주소
    1. ✅ api Docker 이미지 (`output: "standalone"`, multi-stage, root가 아닌 사용자)
-   2. web Docker 이미지 (`NEXT_PUBLIC_API_URL`은 빌드할 때 코드에 박힌다)
+   2. ✅ web Docker 이미지 (`NEXT_PUBLIC_API_URL`은 빌드할 때 코드에 박혀서 `--build-arg`로 받는다, `.next/static`과 `public`은 직접 복사)
    3. 배포용 compose로 web + api + mysql 함께 띄우기, 마이그레이션 실행 방법, 앱 전용 DB 계정
    4. 쿠키 도메인(`COOKIE_DOMAIN`): `api.` 주소가 만든 쿠키를 web 주소에서도 보이게
    5. AWS 계정, 루트 MFA, Budgets 알림
