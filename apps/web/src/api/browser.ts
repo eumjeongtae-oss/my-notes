@@ -65,6 +65,11 @@ export function deleteNote(id: number) {
   return apiSend<void>("DELETE", `/api/notes/${id}`);
 }
 
+// POST /api/auth/logout (로그아웃). 백엔드가 세션을 지우고 session 쿠키도 지운다. 성공하면 204
+export function logout() {
+  return apiSend<void>("POST", "/api/auth/logout");
+}
+
 // GET /api/notes?sort&cursor (무한스크롤의 다음 묶음)
 // cursor가 null이면 첫 묶음. 응답의 nextCursor를 다음 호출의 cursor로 넘긴다
 export async function getNotesPage(

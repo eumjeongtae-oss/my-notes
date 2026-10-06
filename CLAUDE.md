@@ -52,6 +52,9 @@ velog 형식의 화면으로 쓰는 개인 마크다운 노트 앱. 누구나 Go
 ## 구조: apps/web (프론트)
 
 - `src/app/(main)/`: 헤더가 있는 화면들 (홈, 읽기). 라우트 그룹이라 URL에는 나타나지 않음
+- `src/app/(main)/layout.tsx`: 헤더 레이아웃. `getCurrentUser()`로 내 정보를 가져와 헤더에 넘기고, 없으면(만료된 쿠키) `/login`으로
+- `src/app/(main)/_components/user-menu.tsx`: 헤더 오른쪽 프로필 사진 + 메뉴(이름, 이메일, 로그아웃). HTML `<details>`에 바깥 클릭, Esc 닫기만 직접 붙였다. 로그아웃하면 `queryClient.clear()`로 React Query 기억을 모두 지운다 (다른 계정의 목록이 보이지 않게)
+- `next.config.ts`: `images.remotePatterns`에 Google 프로필 사진 주소(`lh3.googleusercontent.com`)를 허락했다. 외부 이미지를 `next/image`로 보여주려면 여기에 추가한다
 - `src/app/(main)/not-found.tsx`, `error.tsx`: 헤더 안에 보이는 404, 에러 화면. `(main)` 밖(`/write`, 없는 주소)은 `src/app/not-found.tsx`, `src/app/write/error.tsx`가 맡는다
 - `src/app/_components/providers.tsx`: React Query Provider (`"use client"`). 루트 `layout.tsx`가 감싼다. 서버는 요청마다, 브라우저는 하나의 QueryClient
 - `src/app/icon.svg`: 파비콘 (Next.js 파일 규칙). 로고 `src/components/logo.tsx`(헤더, 로그인 페이지)와 같은 모양이라 함께 고친다
