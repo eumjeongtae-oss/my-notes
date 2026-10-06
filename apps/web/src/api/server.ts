@@ -23,21 +23,25 @@ function getApiUrl() {
 // 백엔드가 로그인 확인에 쓰는 쿠키 이름 (apps/api의 SESSION_COOKIE와 같아야 한다)
 const SESSION_COOKIE = "session";
 
-// GET 요청을 보내고 JSON을 돌려준다.
-//   401(로그인 안 함, 세션 만료) → 로그인 페이지로 보낸다
-//   그 밖의 실패(4xx, 5xx) → ApiError를 던진다
+// 백엔드에 GET 요청을 보내고 응답(Response)을 그대로 돌려준다. 실패 처리는 부르는 쪽이 한다.
 //
 // 쿠키 전달: 브라우저 → web 서버 요청에 실려 온 session 쿠키를, web 서버 → api 요청에 그대로 붙인다.
 // 서버끼리의 fetch는 브라우저가 아니라서 쿠키를 자동으로 붙여 주지 않는다. 안 붙이면 api는 "로그인 안 한 사람"으로 본다.
 // session 쿠키만 골라서 보낸다 (다른 쿠키까지 백엔드에 넘길 이유가 없다).
 //
 // cookies()는 요청마다 값이 달라서, 이걸 쓰는 페이지는 빌드 때 HTML로 굳지 않고 요청 때마다 그려진다
-export async function apiGet<T>(path: string): Promise<T> {
+export async function fetchWithSession(path: string) {
   const session = (await cookies()).get(SESSION_COOKIE);
-
-  const response = await fetch(`${getApiUrl()}${path}`, {
+  return fetch(`${getApiUrl()}${path}`, {
     headers: session ? { Cookie: `${SESSION_COOKIE}=${session.value}` } : {},
   });
+}
+
+// GET 요청을 보내고 JSON을 돌려준다.
+//   401(로그인 안 함, 세션 만료) → 로그인 페이지로 보낸다
+//   그 밖의 실패(4xx, 5xx) → ApiError를 던진다
+export async function apiGet<T>(path: string): Promise<T> {
+  const response = await fetchWithSession(path);
   if (response.status === 401) redirect("/login");
   await throwIfNotOk(response);
   return response.json();

@@ -54,7 +54,9 @@ velog 형식의 화면으로 쓰는 개인 마크다운 노트 앱. 누구나 Go
 - `src/app/(main)/`: 헤더가 있는 화면들 (홈, 읽기). 라우트 그룹이라 URL에는 나타나지 않음
 - `src/app/(main)/not-found.tsx`, `error.tsx`: 헤더 안에 보이는 404, 에러 화면. `(main)` 밖(`/write`, 없는 주소)은 `src/app/not-found.tsx`, `src/app/write/error.tsx`가 맡는다
 - `src/app/_components/providers.tsx`: React Query Provider (`"use client"`). 루트 `layout.tsx`가 감싼다. 서버는 요청마다, 브라우저는 하나의 QueryClient
-- `src/app/icon.svg`: 파비콘 (Next.js 파일 규칙). 헤더 로고 `(main)/_components/logo.tsx`와 같은 모양이라 함께 고친다
+- `src/app/icon.svg`: 파비콘 (Next.js 파일 규칙). 로고 `src/components/logo.tsx`(헤더, 로그인 페이지)와 같은 모양이라 함께 고친다
+- `src/app/login/page.tsx`: 로그인 페이지 (헤더 없음). "Google로 계속하기"는 백엔드 `/api/auth/google`로 이동하는 `<a>`. 실패하면 `?error=`로 돌아와 빨간 글씨. 이미 로그인했으면 홈으로 (api에 물어서 확인)
+- `src/proxy.ts`: 페이지를 그리기 전에 `session` 쿠키가 **없으면** `/login`으로 보낸다. 쿠키가 있는지만 본다 (진짜 확인은 api). 만료된 쿠키는 api 401 → `server.ts`가 `/login`으로
 - 화면은 velog 모티브: 목록형 홈(카드형 보기는 없음), 읽기 페이지, 헤더 없는 전체 화면 글쓰기(`/write`, 왼쪽 에디터 + 오른쪽 미리보기)
 - 컴포넌트 위치는 colocation 방식이다 (파일명은 kebab-case, export는 named export)
   - 한 라우트(그룹)에서만 쓰면 그 폴더의 `_components/`에 둔다 (예: `src/app/(main)/_components/header.tsx`). `_`로 시작하는 폴더는 라우팅에서 제외된다
@@ -64,7 +66,8 @@ velog 형식의 화면으로 쓰는 개인 마크다운 노트 앱. 누구나 Go
   - `server.ts`: 서버 컴포넌트용 공통 호출 함수 (`API_URL` 붙이기, 실패 시 `ApiError`). `apiGet`은 브라우저가 보낸 `session` 쿠키를 api 요청에 그대로 붙이고(서버끼리 fetch는 쿠키를 자동으로 안 붙인다), 401이면 `/login`으로 보낸다. `cookies()`를 쓰므로 페이지가 빌드 때 데이터로 굳지 않는다. 하나를 조회할 때는 `apiGetOrNull`(404, 400이면 `null` → 화면에서 `notFound()`)
   - `errors.ts`: `ApiError`와 `getErrorMessage`(실패 문구. 버튼 옆 빨간 글씨에 쓴다)
   - `notes.ts`: 노트 API. JSON의 날짜 문자열을 `Date`로 바꿔서 돌려준다
-  - `server.ts`, `notes.ts`, `series.ts`는 `server-only`(서버 컴포넌트 전용)
+  - `auth.ts`: `getCurrentUser()` (`GET /api/auth/me`, 로그인 안 했으면 `null`. 401이어도 `/login`으로 보내지 않는다)
+  - `server.ts`, `notes.ts`, `series.ts`, `auth.ts`는 `server-only`(서버 컴포넌트 전용)
   - `types.ts`: 응답 타입과 날짜 변환 (서버용, 브라우저용 공용)
   - `browser.ts`: 브라우저(클라이언트 컴포넌트)에서 부르는 함수. `NEXT_PUBLIC_API_URL` 사용. 다른 출처(3000 → 4000)라서 `credentials: "include"`로 쿠키를 붙인다 (api의 `proxy.ts`가 `Access-Control-Allow-Credentials: true`로 허락)
   - `query-keys.ts`: React Query 이름표(query key). 문자열을 직접 쓰지 않고 `noteKeys`를 쓴다
