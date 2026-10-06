@@ -17,6 +17,9 @@ const corsHeaders = {
   "Access-Control-Allow-Headers": "Content-Type",
   // 사전 확인 결과를 브라우저가 10분 동안 기억한다 (매번 OPTIONS를 보내지 않게)
   "Access-Control-Max-Age": "600",
+  // 쿠키(로그인 세션)가 붙은 요청을 허락한다. 프론트 fetch의 credentials: "include"와 짝이다.
+  // 이게 있으면 Allow-Origin에 "*"를 쓸 수 없고, 위처럼 허락한 출처를 정확히 적어야 한다
+  "Access-Control-Allow-Credentials": "true",
 };
 
 export function proxy(request: NextRequest) {

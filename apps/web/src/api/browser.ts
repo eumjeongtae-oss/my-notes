@@ -25,6 +25,9 @@ async function apiSend<T>(
 
   const response = await fetch(`${API_URL}${path}`, {
     method,
+    // 다른 출처(3000 → 4000)로 보내는 요청에도 쿠키를 붙인다. 기본값(same-origin)이면 쿠키가 빠져서 401이 난다.
+    // 백엔드도 Access-Control-Allow-Credentials: true로 허락해야 브라우저가 응답을 넘겨준다 (apps/api/src/proxy.ts)
+    credentials: "include",
     // 본문이 있을 때만 JSON으로 보낸다 (DELETE는 본문이 없다)
     ...(body !== undefined && {
       headers: { "Content-Type": "application/json" },
