@@ -1,10 +1,18 @@
 import { decodeIdToken, OAuth2RequestError } from "arctic";
 import { z } from "zod";
 
-import { setSessionCookie, takeOAuthCookies } from "@/lib/auth-cookies";
+import {
+  getSessionToken,
+  setSessionCookie,
+  takeOAuthCookies,
+} from "@/lib/auth-cookies";
 import { withErrorHandling } from "@/lib/with-error-handling";
 import { getGoogle, getWebUrl } from "@/server/auth/google";
-import { createSession } from "@/server/auth/session";
+import {
+  createSession,
+  deleteExpiredSessions,
+  invalidateSession,
+} from "@/server/auth/session";
 import { upsertGoogleUser } from "@/server/users/service";
 
 // Google이 준 사용자 정보(ID 토큰) 중 우리가 쓰는 칸. 모양이 다르면 로그인을 실패시킨다
@@ -70,6 +78,13 @@ export const GET = withErrorHandling(async (request: Request) => {
     name: (name || email.split("@")[0]).slice(0, 100),
     picture: picture ?? null,
   });
+
+  // 세션 정리 두 가지 (안 하면 다시 로그인할 때마다 세션이 쌓인다)
+  // ① 이 브라우저에 예전 로그인 쿠키가 있으면 그 세션을 지운다. 새 쿠키로 덮어쓰면 아무도 못 쓰는 세션이 되기 때문
+  const oldToken = await getSessionToken();
+  if (oldToken) await invalidateSession(oldToken);
+  // ② 이 사용자의 기한 지난 세션을 지운다 (다른 기기, 시크릿 창 등에 버려진 것)
+  await deleteExpiredSessions(user.id);
 
   const session = await createSession(user.id);
   await setSessionCookie(session.token, session.expiresAt);

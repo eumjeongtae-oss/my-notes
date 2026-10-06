@@ -84,6 +84,16 @@ export async function invalidateSession(token: string) {
   await prisma.session.deleteMany({ where: { id: hashToken(token) } });
 }
 
+// 이 사용자의 기한 지난 세션을 모두 지운다. 로그인할 때 부른다.
+// 쿠키를 지웠거나, 시크릿 창을 닫았거나, 안 쓰는 기기에 남은 세션은 그 토큰으로 요청이 다시 오지 않아서
+// validateSessionToken이 지울 기회가 없다. 그래서 로그인할 때 한꺼번에 청소한다
+// SQL: DELETE FROM sessions WHERE user_id = ? AND expires_at <= NOW()
+export async function deleteExpiredSessions(userId: number) {
+  await prisma.session.deleteMany({
+    where: { userId, expiresAt: { lte: new Date() } },
+  });
+}
+
 export type SessionUser = NonNullable<
   Awaited<ReturnType<typeof validateSessionToken>>
 >["user"];
