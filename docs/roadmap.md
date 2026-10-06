@@ -70,7 +70,7 @@ apps/api  백엔드 Next.js (포트 4000)  REST API, Prisma, MySQL
    4. ✅ 노트와 묶음에 주인(`userId`) 추가 (기존 노트는 첫 사용자에게 옮기는 데이터 마이그레이션, 묶음 이름은 사람마다 하나), 모든 노트, 묶음 API를 로그인한 사람의 것만 다루게 보호 (남의 노트 id는 404)
    5. ✅ web: 쿠키 전달 (브라우저 요청, 서버 컴포넌트), 로그인 페이지, 헤더의 프로필 메뉴와 로그아웃
 4. **배포**: 프론트와 백엔드를 각각 Docker 이미지로, EC2, 배포용 DB, GitHub Actions, 도메인과 HTTPS. AWS Budgets 알림, 개인정보 처리방침 페이지, Google 앱 게시(테스트 → 프로덕션)
-   - 구성: EC2 한 대(t3.small)에 Docker Compose로 Caddy(HTTPS 자동) + web + api + mysql. 주소는 `chagok.app`(web), `api.chagok.app`(api) 예정
+   - 구성: EC2 한 대(t3.small)에 Docker Compose로 Caddy(HTTPS 자동) + web + api + mysql. 주소는 `chagoknotes.com`(web), `api.chagoknotes.com`(api). `chagok.app` 등 짧은 이름은 이미 주인이 있었다
    - DB는 RDS(월 $20 이상) 대신 EC2 안의 MySQL 컨테이너. 대신 매일 백업을 S3로. 예상 비용 월 약 $25 + 도메인
    - GitHub 레포: https://github.com/eumjeongtae-oss/my-notes (공개). 커밋 이메일은 GitHub noreply 주소
    1. ✅ api Docker 이미지 (`output: "standalone"`, multi-stage, root가 아닌 사용자)

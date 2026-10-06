@@ -22,9 +22,9 @@ const baseOptions = {
 } as const;
 
 // 세션 쿠키에만 붙이는 설정
-//   domain: 쿠키를 함께 쓸 도메인. 배포하면 api는 api.chagok.app, web은 chagok.app으로 주소가 다르다.
-//           domain이 없으면 쿠키를 만든 api.chagok.app에만 가서 web(proxy.ts, 서버 컴포넌트)이 로그인을 모른다.
-//           COOKIE_DOMAIN=chagok.app이면 chagok.app과 그 아래 주소(api.chagok.app) 모두에 쿠키가 간다.
+//   domain: 쿠키를 함께 쓸 도메인. 배포하면 api는 api.chagoknotes.com, web은 chagoknotes.com으로 주소가 다르다.
+//           domain이 없으면 쿠키를 만든 api.chagoknotes.com에만 가서 web(proxy.ts, 서버 컴포넌트)이 로그인을 모른다.
+//           COOKIE_DOMAIN=chagoknotes.com이면 chagoknotes.com과 그 아래 주소(api.chagoknotes.com) 모두에 쿠키가 간다.
 //           로컬은 비워 둔다: localhost 쿠키는 포트(3000, 4000)와 상관없이 원래 함께 쓴다
 // Google 로그인 중에 쓰는 쿠키(state 등)는 api에서 만들고 api에서 읽으므로 domain이 필요 없다
 const sessionOptions = {
