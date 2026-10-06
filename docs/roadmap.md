@@ -75,7 +75,7 @@ apps/api  백엔드 Next.js (포트 4000)  REST API, Prisma, MySQL
    - GitHub 레포: https://github.com/eumjeongtae-oss/my-notes (공개). 커밋 이메일은 GitHub noreply 주소
    1. ✅ api Docker 이미지 (`output: "standalone"`, multi-stage, root가 아닌 사용자)
    2. ✅ web Docker 이미지 (`NEXT_PUBLIC_API_URL`은 빌드할 때 코드에 박혀서 `--build-arg`로 받는다, `.next/static`과 `public`은 직접 복사)
-   3. 배포용 compose로 web + api + mysql 함께 띄우기, 마이그레이션 실행 방법, 앱 전용 DB 계정
+   3. ✅ 배포용 `compose.prod.yaml`로 web + api + mysql 함께 띄우기, 켤 때마다 마이그레이션 자동 실행(`migrate` 서비스), 앱 전용 DB 계정. 로컬에서 로그인까지 확인(Google Console에 `http://localhost:4001/...` 리디렉션 URI 추가), 개발 DB의 노트를 덤프 → 복원으로 옮기는 연습 (4-7에서 라이브로 옮긴다)
    4. 쿠키 도메인(`COOKIE_DOMAIN`): `api.` 주소가 만든 쿠키를 web 주소에서도 보이게
    5. AWS 계정, 루트 MFA, Budgets 알림
    6. 도메인 구입, Route 53 연결

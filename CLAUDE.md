@@ -40,6 +40,11 @@ velog 형식의 화면으로 쓰는 개인 마크다운 노트 앱. 누구나 Go
 - `pnpm db:studio`: 브라우저에서 DB 내용 보기
 - `docker build -f apps/api/Dockerfile -t my-notes-api .`: api 배포용 이미지 만들기 (맨 끝 `.`: 저장소 루트가 빌드 재료). 실행은 `docker run -p 4001:4000 -e DATABASE_URL=... my-notes-api`. 컨테이너 안의 `localhost`는 컨테이너 자신이라 로컬 MySQL은 `host.docker.internal`로 부른다
 - `docker build -f apps/web/Dockerfile --build-arg NEXT_PUBLIC_API_URL=http://localhost:4001 -t my-notes-web .`: web 배포용 이미지. 실행은 `docker run -p 3001:3000 -e API_URL=http://host.docker.internal:4001 my-notes-web` (api 컨테이너를 먼저 켠다)
+- `pnpm prod ...`: 배포용 Compose(`docker compose -f compose.prod.yaml --env-file .env.prod`)의 줄임말. 뒤에 Compose 명령을 붙인다
+  - `pnpm prod up -d --build --wait`: 이미지를 만들고 mysql → migrate(테이블 만들기, 끝나면 꺼짐) → api → web 순서로 켠다 (web 3001, api 4001). 개발용과 프로젝트 이름(`my-notes-prod`)과 DB가 따로다
+  - `pnpm prod ps`, `pnpm prod logs api`, `pnpm prod down` (`down -v`는 배포 연습용 DB 데이터까지 삭제)
+  - DB 보기: `pnpm prod exec mysql mysql -u my_notes_app -p my_notes` (MySQL은 밖으로 열지 않아서 컨테이너 안에서 본다)
+- DB 옮기기(덤프 → 복원): 개발 컨테이너에서 `mysqldump --no-create-info`로 데이터만 `/tmp/dump.sql`에 뽑고(`sessions`, `_prisma_migrations`는 제외), `docker cp`로 꺼내 `backups/`(git 제외)에 두고, 대상 컨테이너에 넣어 `mysql < /tmp/dump.sql`. 대상 DB는 migrate만 끝난 빈 상태여야 한다 (로그인 전). PowerShell `>`는 한글을 깨뜨리므로 `--result-file`을 쓴다
 
 작업을 마치면 `typecheck`, `lint`, `format:check`, `build`를 통과시킨다.
 
@@ -48,6 +53,7 @@ velog 형식의 화면으로 쓰는 개인 마크다운 노트 앱. 누구나 Go
 앱마다 자기 `.env`를 가진다 (회사에서 레포마다 따로 있는 것과 같다). 각 폴더의 `.env.example`을 복사해서 만든다.
 
 - 루트 `.env`: MySQL 컨테이너 설정 (`compose.yaml`이 읽음)
+- 루트 `.env.prod`: 배포용 Compose(`compose.prod.yaml`)가 읽는 값 전부 (MySQL root와 앱 전용 계정 비밀번호, `WEB_URL`, `API_URL`, Google, `ADMIN_EMAILS`). 개발용과 다른 비밀번호를 쓰고, 비밀번호는 영어와 숫자만 (DB 주소 안에 들어가므로)
 - `apps/api/.env`: `DATABASE_URL` (DB 주소는 백엔드만 안다), `CORS_ORIGINS` (브라우저 호출을 허락할 프론트 주소), `GOOGLE_CLIENT_ID`, `GOOGLE_CLIENT_SECRET`(비밀), `GOOGLE_REDIRECT_URI`, `ADMIN_EMAILS` (처음 가입할 때 이미지 권한을 켤 이메일), `WEB_URL` (로그인 후 돌려보낼 프론트 주소)
 - `apps/web/.env`: `API_URL` (서버 컴포넌트용 백엔드 주소), `NEXT_PUBLIC_API_URL` (브라우저용 백엔드 주소, 누구나 볼 수 있으니 비밀 값 금지). 프론트는 DB 정보를 갖지 않는다
 
