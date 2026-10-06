@@ -54,7 +54,7 @@ velog 형식의 화면으로 쓰는 개인 마크다운 노트 앱. 누구나 Go
 
 - 루트 `.env`: MySQL 컨테이너 설정 (`compose.yaml`이 읽음)
 - 루트 `.env.prod`: 배포용 Compose(`compose.prod.yaml`)가 읽는 값 전부 (MySQL root와 앱 전용 계정 비밀번호, `WEB_URL`, `API_URL`, Google, `ADMIN_EMAILS`). 개발용과 다른 비밀번호를 쓰고, 비밀번호는 영어와 숫자만 (DB 주소 안에 들어가므로)
-- `apps/api/.env`: `DATABASE_URL` (DB 주소는 백엔드만 안다), `CORS_ORIGINS` (브라우저 호출을 허락할 프론트 주소), `GOOGLE_CLIENT_ID`, `GOOGLE_CLIENT_SECRET`(비밀), `GOOGLE_REDIRECT_URI`, `ADMIN_EMAILS` (처음 가입할 때 이미지 권한을 켤 이메일), `WEB_URL` (로그인 후 돌려보낼 프론트 주소)
+- `apps/api/.env`: `DATABASE_URL` (DB 주소는 백엔드만 안다), `CORS_ORIGINS` (브라우저 호출을 허락할 프론트 주소), `GOOGLE_CLIENT_ID`, `GOOGLE_CLIENT_SECRET`(비밀), `GOOGLE_REDIRECT_URI`, `ADMIN_EMAILS` (처음 가입할 때 이미지 권한을 켤 이메일), `WEB_URL` (로그인 후 돌려보낼 프론트 주소), `COOKIE_DOMAIN` (세션 쿠키를 web과 api가 함께 쓸 도메인. 배포는 `chagok.app`, 로컬은 비움)
 - `apps/web/.env`: `API_URL` (서버 컴포넌트용 백엔드 주소), `NEXT_PUBLIC_API_URL` (브라우저용 백엔드 주소, 누구나 볼 수 있으니 비밀 값 금지). 프론트는 DB 정보를 갖지 않는다
 
 ## 구조: apps/web (프론트)

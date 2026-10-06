@@ -78,6 +78,8 @@ services:
       GOOGLE_CLIENT_SECRET: ${GOOGLE_CLIENT_SECRET:?.env.prod에 GOOGLE_CLIENT_SECRET이 필요합니다}
       GOOGLE_REDIRECT_URI: ${API_URL:?.env.prod에 API_URL이 필요합니다}/api/auth/google/callback
       ADMIN_EMAILS: ${ADMIN_EMAILS:-}
+      # 로그인 쿠키를 web과 api가 함께 쓸 도메인 (apps/api/src/lib/auth-cookies.ts). 로컬은 비워 둔다
+      COOKIE_DOMAIN: ${COOKIE_DOMAIN:-}
     ports:
       - "4001:4000"
 
