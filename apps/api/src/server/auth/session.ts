@@ -49,7 +49,7 @@ export async function createSession(userId: number) {
 }
 
 // 쿠키의 토큰으로 세션을 확인한다.
-//   유효하면  → { user, expiresAt } (기한이 늘었으면 expiresAt도 새 값. 쿠키 기한도 같이 늘려야 한다)
+//   유효하면  → { user, expiresAt, renewed } (renewed가 true면 기한이 늘었다. 쿠키 기한도 같이 늘려야 한다)
 //   아니면    → null (없는 토큰, 기한 지남)
 export async function validateSessionToken(token: string) {
   const sessionId = hashToken(token);
@@ -73,10 +73,10 @@ export async function validateSessionToken(token: string) {
       where: { id: sessionId },
       data: { expiresAt },
     });
-    return { user: session.user, expiresAt };
+    return { user: session.user, expiresAt, renewed: true };
   }
 
-  return { user: session.user, expiresAt: session.expiresAt };
+  return { user: session.user, expiresAt: session.expiresAt, renewed: false };
 }
 
 // 로그아웃. 이미 없는 세션이어도 에러 없이 끝난다 (deleteMany는 0개를 지워도 괜찮다)

@@ -126,3 +126,16 @@ Content-Type: application/json
 {
   "seriesName": null
 }
+
+### ── 로그인 ──
+### Google 로그인은 브라우저에서 http://localhost:4000/api/auth/google 으로 시작한다 (Google 화면을 거쳐야 해서 여기서는 못 함)
+### 아래 요청은 브라우저의 session 쿠키 값(F12 → Application → Cookies)을 넣어서 보낸다
+@sessionToken = 여기에-session-쿠키-값
+
+### 지금 로그인한 사용자 → 200 (쿠키가 없거나 틀리면 401)
+GET {{baseUrl}}/api/auth/me
+Cookie: session={{sessionToken}}
+
+### 로그아웃 → 204 (세션 삭제, 쿠키 삭제)
+POST {{baseUrl}}/api/auth/logout
+Cookie: session={{sessionToken}}

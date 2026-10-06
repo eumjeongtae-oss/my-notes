@@ -30,6 +30,11 @@ function expireCookie(
   cookieStore.set(name, "", { ...baseOptions, maxAge: 0 });
 }
 
+// 요청에 실려 온 세션 토큰. 쿠키가 없으면 undefined
+export async function getSessionToken() {
+  return (await cookies()).get(SESSION_COOKIE)?.value;
+}
+
 export async function setSessionCookie(token: string, expiresAt: Date) {
   (await cookies()).set(SESSION_COOKIE, token, {
     ...baseOptions,
