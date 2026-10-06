@@ -36,7 +36,7 @@ velog 형식의 화면으로 쓰는 개인 마크다운 노트 앱. 누구나 Go
 - `pnpm build` / `pnpm lint` / `pnpm typecheck`: 모든 앱에서 빌드, 린트, 타입 검사
 - `pnpm format` / `pnpm format:check`: 저장소 전체 Prettier (Tailwind 클래스 자동 정렬 포함)
 - `pnpm db:migrate --name 변경내용`: 마이그레이션 만들고 DB에 반영. 이후 `pnpm db:generate`로 클라이언트 코드 재생성 (Prisma 7은 자동 생성하지 않음). **generate 후에는 `pnpm dev`를 다시 켠다.** 개발 서버는 `db.ts`가 `globalThis`에 보관한 예전 클라이언트를 계속 써서 새 모델(`prisma.user` 등)이 없다는 에러가 난다
-- `pnpm db:seed`: 개발용 예시 데이터로 초기화 (기존 노트와 묶음 삭제됨). 예시 데이터는 가장 먼저 가입한 사용자의 것이 되므로 **먼저 한 번 로그인**해야 한다 (사용자와 세션은 지우지 않는다)
+- `pnpm db:seed`: 개발용 예시 데이터로 초기화 (기존 노트와 묶음 삭제됨). 예시 데이터는 가장 먼저 가입한 사용자의 것이 되므로 **먼저 한 번 로그인**해야 한다 (사용자와 세션은 지우지 않는다. **모든 사용자의** 노트와 묶음을 지우므로 개발 DB에서만 쓴다)
 - `pnpm db:studio`: 브라우저에서 DB 내용 보기
 
 작업을 마치면 `typecheck`, `lint`, `format:check`, `build`를 통과시킨다.
@@ -55,6 +55,7 @@ velog 형식의 화면으로 쓰는 개인 마크다운 노트 앱. 누구나 Go
 - `src/app/(main)/layout.tsx`: 헤더 레이아웃. `getCurrentUser()`로 내 정보를 가져와 헤더에 넘기고, 없으면(만료된 쿠키) `/login`으로
 - `src/app/(main)/_components/user-menu.tsx`: 헤더 오른쪽 프로필 사진 + 메뉴(이름, 이메일, 로그아웃). HTML `<details>`에 바깥 클릭, Esc 닫기만 직접 붙였다. 로그아웃하면 `queryClient.clear()`로 React Query 기억을 모두 지운다 (다른 계정의 목록이 보이지 않게)
 - `next.config.ts`: `images.remotePatterns`에 Google 프로필 사진 주소(`lh3.googleusercontent.com`)를 허락했다. 외부 이미지를 `next/image`로 보여주려면 여기에 추가한다
+- `src/app/error.tsx`: 가장 바깥 에러 화면 (헤더 없음). `error.tsx`는 같은 폴더의 `layout.tsx` 에러를 잡지 않아서, `(main)/layout.tsx`(내 정보 조회)와 로그인 페이지의 에러는 여기로 온다
 - `src/app/(main)/not-found.tsx`, `error.tsx`: 헤더 안에 보이는 404, 에러 화면. `(main)` 밖(`/write`, 없는 주소)은 `src/app/not-found.tsx`, `src/app/write/error.tsx`가 맡는다
 - `src/app/_components/providers.tsx`: React Query Provider (`"use client"`). 루트 `layout.tsx`가 감싼다. 서버는 요청마다, 브라우저는 하나의 QueryClient
 - `src/app/icon.svg`: 파비콘 (Next.js 파일 규칙). 로고 `src/components/logo.tsx`(헤더, 로그인 페이지)와 같은 모양이라 함께 고친다
