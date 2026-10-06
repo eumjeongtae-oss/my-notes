@@ -1,6 +1,9 @@
 // 노트 데이터 접근 계층 (서비스).
 // DB에서 무엇을 어떻게 가져올지만 안다. HTTP(요청, 응답, 상태 코드)는 모른다.
 // API(route.ts)는 여기 함수만 호출하고 prisma를 직접 쓰지 않는다.
+//
+// ⚠️ 모든 함수는 userId(로그인한 사용자)를 받고, 모든 조회와 수정에 userId 조건을 붙인다.
+// 하나라도 빠지면 남의 노트가 보이거나 고쳐진다. 남의 노트는 "없는 노트"처럼 다룬다(→ 404).
 import "server-only";
 
 import { Prisma } from "@/generated/prisma/client";
@@ -17,7 +20,6 @@ import type {
 // 목록 카드에 보여줄 요약 길이. 카드형은 화면에서 더 짧게 자른다(line-clamp).
 const EXCERPT_LENGTH = 250;
 
-// 노트 목록을 조회한다. 본문 전체 대신 요약(excerpt)만 돌려준다.
 // 노트 목록을 한 묶음(limit개)씩 조회한다. 본문 전체 대신 요약(excerpt)만 돌려준다.
 // cursor가 있으면 "그 노트 다음"부터, 없으면 처음부터 가져온다 (커서 페이지네이션).
 // 돌려주는 nextCursor를 다음 요청에 넣으면 이어서 가져온다. 마지막 묶음이면 nextCursor는 null.
@@ -28,7 +30,10 @@ function escapeLike(value: string) {
   return value.replace(/[\\%_]/g, (char) => `\\${char}`);
 }
 
-export async function listNotes({ q, sort, limit, cursor }: ListNotesQuery) {
+export async function listNotes(
+  userId: number,
+  { q, sort, limit, cursor }: ListNotesQuery,
+) {
   const direction = sort === "latest" ? "desc" : "asc";
   // 최신순이면 커서보다 "작은"(더 과거), 오래된순이면 "큰"(더 최근) 것을 가져온다
   const after = sort === "latest" ? "lt" : "gt";
@@ -59,8 +64,8 @@ export async function listNotes({ q, sort, limit, cursor }: ListNotesQuery) {
   // 목록 조회와 개수 세기를 동시에(Promise.all) 보내서 기다리는 시간이 늘지 않게 한다.
   const [notes, total] = await Promise.all([
     prisma.note.findMany({
-      // 검색 조건과 커서 조건을 둘 다 만족하는 노트 (없는 조건은 무시된다)
-      where: { AND: [searchWhere ?? {}, cursorWhere ?? {}] },
+      // 내 노트 중에서 검색 조건과 커서 조건을 둘 다 만족하는 노트 (없는 조건은 무시된다)
+      where: { userId, AND: [searchWhere ?? {}, cursorWhere ?? {}] },
       // 작성 시각 기준으로 정렬한다. 수정해도 순서가 바뀌지 않는다.
       // 작성 시각이 같으면 id로 한 번 더 정렬해서 항상 같은 순서가 나오게 한다.
       // (커서로 "어디까지 봤는지"를 정확히 이어가려면 순서가 고정돼야 한다)
@@ -77,7 +82,9 @@ export async function listNotes({ q, sort, limit, cursor }: ListNotesQuery) {
       },
     }),
     // 전체 개수도 검색 조건을 적용해서 센다 ("검색 결과 3")
-    cursor ? undefined : prisma.note.count({ where: searchWhere }),
+    cursor
+      ? undefined
+      : prisma.note.count({ where: { userId, ...searchWhere } }),
   ]);
 
   const hasNext = notes.length > limit;
@@ -109,10 +116,10 @@ const noteDetailSelect = {
   series: { select: { id: true, name: true } },
 } satisfies Prisma.NoteSelect;
 
-// 노트 하나를 조회한다. 없으면 null.
-export async function getNoteById(id: number) {
+// 내 노트 하나를 조회한다. 없거나 남의 노트면 null.
+export async function getNoteById(userId: number, id: number) {
   return prisma.note.findUnique({
-    where: { id },
+    where: { id, userId },
     select: noteDetailSelect,
   });
 }
@@ -120,14 +127,15 @@ export async function getNoteById(id: number) {
 // 트랜잭션 안에서 쓰는 Prisma 클라이언트
 type Tx = Prisma.TransactionClient;
 
-// 이름으로 묶음 id를 찾는다. 그 이름의 묶음이 없으면 새로 만든다 (velog 방식).
+// 내 묶음 중에서 이름으로 id를 찾는다. 그 이름의 묶음이 없으면 새로 만든다 (velog 방식).
+// 묶음 이름은 사람마다 하나라서 (userId, name) 짝으로 찾는다 (schema.prisma의 @@unique([userId, name]))
 // upsert: "있으면 그대로 쓰고(update: 아무것도 안 바꿈) 없으면 만든다(create)"
 // SQL: SELECT id FROM series WHERE name = ? → 없으면 INSERT INTO series (name) VALUES (?)
-async function findOrCreateSeriesId(tx: Tx, name: string) {
+async function findOrCreateSeriesId(tx: Tx, userId: number, name: string) {
   const series = await tx.series.upsert({
-    where: { name },
+    where: { userId_name: { userId, name } },
     update: {},
-    create: { name },
+    create: { userId, name },
     select: { id: true },
   });
   return series.id;
@@ -168,15 +176,16 @@ async function leaveSeries(tx: Tx, seriesId: number, removedOrder: number) {
 //
 // $transaction: "묶음 찾기/만들기 → 맨 뒤 번호 알아내기 → 저장"을 하나로 묶는다.
 // 중간에 실패하면 전부 없던 일이 된다 (묶음만 생기고 노트는 저장 안 되는 일이 없다).
-export async function createNote(input: CreateNoteInput) {
+export async function createNote(userId: number, input: CreateNoteInput) {
   return prisma.$transaction(async (tx) => {
     const seriesId = input.seriesName
-      ? await findOrCreateSeriesId(tx, input.seriesName)
+      ? await findOrCreateSeriesId(tx, userId, input.seriesName)
       : null;
     const seriesOrder = seriesId ? await nextSeriesOrder(tx, seriesId) : null;
 
     return tx.note.create({
       data: {
+        userId,
         title: input.title,
         content: input.content,
         seriesId,
@@ -188,16 +197,21 @@ export async function createNote(input: CreateNoteInput) {
 }
 
 // 노트를 고친다. input에 있는 칸만 바뀐다(updatedAt은 Prisma가 자동으로 갱신).
-// 그 id의 노트가 없으면 null을 돌려준다 → API에서 404로 응답한다.
+// 그 id의 노트가 없거나 남의 노트면 null을 돌려준다 → API에서 404로 응답한다.
 //
 // 묶음(seriesName)을 보내면:
 //   같은 묶음 그대로 → 번호 그대로
 //   다른 묶음으로   → 새 묶음(없으면 만듦)의 맨 뒤로. 원래 묶음은 빈자리를 당기고, 비면 지운다
 //   묶음 빼기(null) → 번호를 비운다. 원래 묶음은 빈자리를 당기고, 비면 지운다
-export async function updateNote(id: number, input: UpdateNoteInput) {
+export async function updateNote(
+  userId: number,
+  id: number,
+  input: UpdateNoteInput,
+) {
   return prisma.$transaction(async (tx) => {
+    // 내 노트인지 먼저 확인한다. 같은 트랜잭션 안이라 아래 update는 id만으로 찾아도 된다
     const current = await tx.note.findUnique({
-      where: { id },
+      where: { id, userId },
       select: { seriesId: true, seriesOrder: true },
     });
     if (!current) return null;
@@ -209,7 +223,7 @@ export async function updateNote(id: number, input: UpdateNoteInput) {
     let moved = false;
     if (seriesName !== undefined) {
       const seriesId = seriesName
-        ? await findOrCreateSeriesId(tx, seriesName)
+        ? await findOrCreateSeriesId(tx, userId, seriesName)
         : null;
       if (seriesId !== current.seriesId) {
         moved = true;
@@ -233,13 +247,13 @@ export async function updateNote(id: number, input: UpdateNoteInput) {
   });
 }
 
-// 노트를 지운다. 지웠으면 true, 그 id의 노트가 없으면 false.
+// 노트를 지운다. 지웠으면 true, 그 id의 노트가 없거나 남의 노트면 false.
 // 진짜 삭제(hard delete)다. 되돌릴 수 없으므로 화면에서 한 번 더 확인받는다.
 // 묶음에 속한 노트였다면 뒤에 있던 노트들의 번호를 당기고, 마지막 노트였다면 묶음도 지운다.
-export async function deleteNote(id: number) {
+export async function deleteNote(userId: number, id: number) {
   return prisma.$transaction(async (tx) => {
     const current = await tx.note.findUnique({
-      where: { id },
+      where: { id, userId },
       select: { seriesId: true, seriesOrder: true },
     });
     if (!current) return false;

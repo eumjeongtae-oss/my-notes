@@ -4,17 +4,24 @@
 
 @baseUrl = http://localhost:4000
 
+# 노트, 묶음, 내 정보 API는 로그인이 필요하다 (없으면 401).
+# 브라우저에서 로그인한 뒤 session 쿠키 값(F12 → Application → Cookies → session)을 여기에 넣는다
+@sessionToken = 여기에-session-쿠키-값
+
 ### 헬스체크
 GET {{baseUrl}}/api/health
 
 ### 노트 목록 (최신순)
 GET {{baseUrl}}/api/notes?sort=latest
+Cookie: session={{sessionToken}}
 
 ### 노트 하나
 GET {{baseUrl}}/api/notes/1
+Cookie: session={{sessionToken}}
 
 ### 새 노트 만들기 → 201
 POST {{baseUrl}}/api/notes
+Cookie: session={{sessionToken}}
 Content-Type: application/json
 
 {
@@ -24,6 +31,7 @@ Content-Type: application/json
 
 ### 규칙 위반: 제목이 공백만 → 400
 POST {{baseUrl}}/api/notes
+Cookie: session={{sessionToken}}
 Content-Type: application/json
 
 {
@@ -33,6 +41,7 @@ Content-Type: application/json
 
 ### 규칙 위반: 제목 없음, 본문이 숫자 → 400 (칸별 메시지)
 POST {{baseUrl}}/api/notes
+Cookie: session={{sessionToken}}
 Content-Type: application/json
 
 {
@@ -41,12 +50,14 @@ Content-Type: application/json
 
 ### JSON 문법이 깨짐 → 400
 POST {{baseUrl}}/api/notes
+Cookie: session={{sessionToken}}
 Content-Type: application/json
 
 { "title": "따옴표를 안 닫음 }
 
 ### 노트 고치기: 제목만 → 200
 PATCH {{baseUrl}}/api/notes/1
+Cookie: session={{sessionToken}}
 Content-Type: application/json
 
 {
@@ -55,6 +66,7 @@ Content-Type: application/json
 
 ### 노트 고치기: 제목과 본문 → 200
 PATCH {{baseUrl}}/api/notes/1
+Cookie: session={{sessionToken}}
 Content-Type: application/json
 
 {
@@ -64,12 +76,14 @@ Content-Type: application/json
 
 ### 아무 칸도 안 보냄 → 400
 PATCH {{baseUrl}}/api/notes/1
+Cookie: session={{sessionToken}}
 Content-Type: application/json
 
 {}
 
 ### 없는 노트 → 404
 PATCH {{baseUrl}}/api/notes/999
+Cookie: session={{sessionToken}}
 Content-Type: application/json
 
 {
@@ -78,31 +92,40 @@ Content-Type: application/json
 
 ### 노트 지우기 → 204 (샘플 노트 중 가장 오래된 것)
 DELETE {{baseUrl}}/api/notes/120
+Cookie: session={{sessionToken}}
 
 ### 이미 지운 노트를 다시 지우기 → 404
 DELETE {{baseUrl}}/api/notes/120
+Cookie: session={{sessionToken}}
 
 ### 목록 첫 묶음 (5개씩) → 응답의 nextCursor를 복사해 두기
 GET {{baseUrl}}/api/notes?limit=5
+Cookie: session={{sessionToken}}
 
 ### 목록 다음 묶음 → cursor= 뒤에 위에서 복사한 nextCursor를 붙여넣기
 GET {{baseUrl}}/api/notes?limit=5&cursor=여기에_붙여넣기
+Cookie: session={{sessionToken}}
 
 ### 검색: 제목이나 본문에 "docker"
 GET {{baseUrl}}/api/notes?q=docker
+Cookie: session={{sessionToken}}
 
 ### 검색: LIKE 특수 기호(%)도 글자 그대로 찾는다
 GET {{baseUrl}}/api/notes?q=%25
+Cookie: session={{sessionToken}}
 
 ### 묶음 목록 (화면에서는 "묶음", 코드에서는 series)
 GET {{baseUrl}}/api/series
+Cookie: session={{sessionToken}}
 
 ### 묶음 하나와 속한 노트들 (순서대로)
 GET {{baseUrl}}/api/series/2
+Cookie: session={{sessionToken}}
 
 ### 노트를 묶음에 넣어 저장 → 그 묶음의 맨 뒤 번호(seriesOrder)로 들어간다
 ### 그 이름의 묶음이 없으면 새로 만들어진다 (묶음을 따로 만드는 API는 없다)
 POST {{baseUrl}}/api/notes
+Cookie: session={{sessionToken}}
 Content-Type: application/json
 
 {
@@ -113,6 +136,7 @@ Content-Type: application/json
 
 ### 노트를 다른 묶음으로 옮기기 → 새 묶음 맨 뒤로. 원래 묶음은 번호가 당겨지고, 비면 지워진다
 PATCH {{baseUrl}}/api/notes/1
+Cookie: session={{sessionToken}}
 Content-Type: application/json
 
 {
@@ -121,6 +145,7 @@ Content-Type: application/json
 
 ### 노트를 묶음에서 빼기 → 원래 묶음의 뒤 번호들이 당겨진다 (마지막 노트였으면 묶음도 지워진다)
 PATCH {{baseUrl}}/api/notes/1
+Cookie: session={{sessionToken}}
 Content-Type: application/json
 
 {
@@ -129,9 +154,6 @@ Content-Type: application/json
 
 ### ── 로그인 ──
 ### Google 로그인은 브라우저에서 http://localhost:4000/api/auth/google 으로 시작한다 (Google 화면을 거쳐야 해서 여기서는 못 함)
-### 아래 요청은 브라우저의 session 쿠키 값(F12 → Application → Cookies)을 넣어서 보낸다
-@sessionToken = 여기에-session-쿠키-값
-
 ### 지금 로그인한 사용자 → 200 (쿠키가 없거나 틀리면 401)
 GET {{baseUrl}}/api/auth/me
 Cookie: session={{sessionToken}}

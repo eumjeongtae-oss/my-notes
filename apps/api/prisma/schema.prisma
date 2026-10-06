@@ -10,20 +10,28 @@ datasource db {
   provider = "mysql"
 }
 
-// 시리즈: 여러 노트를 순서대로 묶는 단위 (velog 시리즈)
+// 시리즈: 여러 노트를 순서대로 묶는 단위 (velog 시리즈). 화면에서는 "묶음"
 model Series {
   id        Int      @id @default(autoincrement())
-  name      String   @unique @db.VarChar(100)
+  // 주인. 사용자가 지워지면 그 사람의 묶음도 같이 지운다(Cascade)
+  userId    Int      @map("user_id")
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  // 이름은 사람마다 하나 (A와 B가 둘 다 "Next.js 공부"를 가질 수 있다) → 아래 @@unique([userId, name])
+  name      String   @db.VarChar(100)
   // DB 칸이 아니라 "이 시리즈에 속한 노트들"을 꺼내 쓰기 위한 관계 설명
   notes     Note[]
   createdAt DateTime @default(now()) @map("created_at")
   updatedAt DateTime @updatedAt @map("updated_at")
 
+  @@unique([userId, name])
   @@map("series")
 }
 
 model Note {
   id          Int      @id @default(autoincrement())
+  // 주인. 사용자가 지워지면 그 사람의 노트도 같이 지운다(Cascade)
+  userId      Int      @map("user_id")
+  user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
   title       String   @db.VarChar(200)
   // MySQL에서 String의 기본 타입은 VARCHAR(191)이라 긴 본문이 들어가지 않는다.
   // MediumText는 최대 약 16MB
@@ -40,8 +48,8 @@ model Note {
   // 홈 맨 위에 고정할 노트인지. 기존 노트는 모두 고정 안 된 상태(false)로 시작한다
   pinned      Boolean  @default(false)
 
-  // 인덱스(책 뒤의 찾아보기): 홈 목록 정렬/무한스크롤(작성 시각순), 시리즈 안의 순서 조회용
-  @@index([createdAt, id])
+  // 인덱스(책 뒤의 찾아보기): 홈 목록("내 노트를 작성 시각순으로"), 시리즈 안의 순서 조회용
+  @@index([userId, createdAt, id])
   @@index([seriesId, seriesOrder])
   @@map("notes")
 }
@@ -59,6 +67,8 @@ model User {
   // ADMIN_EMAILS의 이메일로 처음 가입하면 켜고, 다른 사람은 DB에서 직접 켠다
   canUploadImages Boolean   @default(false) @map("can_upload_images")
   sessions        Session[]
+  notes           Note[]
+  series          Series[]
   createdAt       DateTime  @default(now()) @map("created_at")
   updatedAt       DateTime  @updatedAt @map("updated_at")
 

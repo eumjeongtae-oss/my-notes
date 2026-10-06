@@ -36,7 +36,7 @@ velog 형식의 화면으로 쓰는 개인 마크다운 노트 앱. 누구나 Go
 - `pnpm build` / `pnpm lint` / `pnpm typecheck`: 모든 앱에서 빌드, 린트, 타입 검사
 - `pnpm format` / `pnpm format:check`: 저장소 전체 Prettier (Tailwind 클래스 자동 정렬 포함)
 - `pnpm db:migrate --name 변경내용`: 마이그레이션 만들고 DB에 반영. 이후 `pnpm db:generate`로 클라이언트 코드 재생성 (Prisma 7은 자동 생성하지 않음). **generate 후에는 `pnpm dev`를 다시 켠다.** 개발 서버는 `db.ts`가 `globalThis`에 보관한 예전 클라이언트를 계속 써서 새 모델(`prisma.user` 등)이 없다는 에러가 난다
-- `pnpm db:seed`: 개발용 예시 데이터로 초기화 (기존 데이터 삭제됨)
+- `pnpm db:seed`: 개발용 예시 데이터로 초기화 (기존 노트와 묶음 삭제됨). 예시 데이터는 가장 먼저 가입한 사용자의 것이 되므로 **먼저 한 번 로그인**해야 한다 (사용자와 세션은 지우지 않는다)
 - `pnpm db:studio`: 브라우저에서 DB 내용 보기
 
 작업을 마치면 `typecheck`, `lint`, `format:check`, `build`를 통과시킨다.
@@ -82,7 +82,7 @@ velog 형식의 화면으로 쓰는 개인 마크다운 노트 앱. 누구나 Go
   - 중복(@unique) 같은 "지금 데이터와 충돌"은 409 Conflict. 미리 조회하지 말고 만들어 보고 Prisma `P2002`를 잡는다
   - **모든 API 함수는 `withErrorHandling`(`src/lib/with-error-handling.ts`)으로 감싼다** (`export const GET = withErrorHandling(async (request) => ...)`). 예상 못 한 에러는 서버 로그에 원인을 남기고 500 `{ message }`로 응답한다. 에러 내용(DB 주소, SQL)을 응답에 넣지 않는다
   - 400, 404처럼 예상한 에러는 각 API가 직접 응답한다
-  - 로그인이 필요한 API는 맨 앞에서 `const auth = await requireUser(); if (!auth.success) return auth.response;` (401). 로그인은 쿠키(`session`, HttpOnly) + DB 세션 방식이다
+  - **노트, 묶음 API는 모두 로그인이 필요하다.** 맨 앞에서 `const auth = await requireUser(); if (!auth.success) return auth.response;` (401). 로그인은 쿠키(`session`, HttpOnly) + DB 세션 방식이다
   - 목록 API는 배열 대신 `{ items }` 객체로 응답한다 (무한스크롤 때 `nextCursor`를 추가할 수 있게)
   - 요청 본문은 `parseBody(request, 스키마)`(`src/lib/parse-body.ts`)로 읽고 검사한다. URL의 id도 zod 스키마(`noteIdSchema`)로 검사한다
   - 검색(`q`)은 제목과 본문의 LIKE 검색이다. `%`, `_`는 LIKE의 특수 기호라 `escapeLike`로 이스케이프한다 (안 하면 "%" 검색에 모든 노트가 나옴)
@@ -101,6 +101,7 @@ velog 형식의 화면으로 쓰는 개인 마크다운 노트 앱. 누구나 Go
   - `series/service.ts`, `series/schema.ts`: 묶음(series) 조회
   - `auth/session.ts`: 로그인 세션 만들기, 확인(남은 기한이 15일 미만이면 30일로 연장), 삭제. 쿠키에는 무작위 토큰, DB(`sessions.id`)에는 그 SHA-256 값만 둔다
   - `auth/google.ts`: arctic(Google OAuth) 설정. `users/service.ts`: Google 사용자 찾기/만들기(`googleId`로 찾는다)
+  - **노트, 묶음 서비스 함수는 모두 `userId`를 첫 인자로 받고, 모든 조회와 수정에 `userId` 조건을 붙인다** (`where: { id, userId }`). 하나라도 빠지면 남의 노트가 보인다. 남의 노트, 묶음은 403이 아니라 404로 "없는 것"처럼 응답한다. 묶음 이름은 사람마다 하나(`@@unique([userId, name])`)
   - 도메인(notes, series 등)마다 폴더를 두고 `service.ts`와 `schema.ts`로 나눈다
   - **목록에서 관계된 개수나 데이터를 반복문으로 하나씩 조회하지 않는다 (N+1 문제).** `_count`, `select`/`include`로 한 번에 가져온다
   - URL id 검사는 `idSchema("노트")`처럼 `src/lib/id-schema.ts`를 쓴다
