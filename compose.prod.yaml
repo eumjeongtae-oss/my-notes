@@ -1,0 +1,82 @@
+# 배포용: web + api + mysql을 한 번에 띄운다. EC2에서도 이 파일을 쓴다.
+# 값은 .env.prod에서 읽는다 (.env.prod.example 참고):
+#   켜기:  docker compose -f compose.prod.yaml --env-file .env.prod up -d --build --wait
+#   끄기:  docker compose -f compose.prod.yaml --env-file .env.prod down
+#
+# 개발용 compose.yaml과의 차이
+# - 프로젝트 이름(my-notes-prod)이 달라서 컨테이너와 DB 데이터(볼륨)가 개발용과 섞이지 않는다
+# - 컨테이너끼리는 서비스 이름으로 부른다 (mysql:3306, api:4000). 같은 Compose 안의 컨테이너는 같은 네트워크에 묶인다
+# - MySQL은 밖으로 열지 않는다 (ports 없음). api만 접속하면 되고, 인터넷에서 DB에 접속할 길을 만들지 않는다
+#
+# ${이름:?문구}: 값이 없으면 문구를 보여 주고 멈춘다 (빈 비밀번호로 켜지는 사고 방지)
+name: my-notes-prod
+
+services:
+  mysql:
+    image: mysql:8.4
+    restart: unless-stopped
+    environment:
+      MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD:?.env.prod에 MYSQL_ROOT_PASSWORD가 필요합니다}
+      MYSQL_DATABASE: ${MYSQL_DATABASE:?.env.prod에 MYSQL_DATABASE가 필요합니다}
+      # 앱 전용 계정. MySQL 이미지가 처음 시작할 때 만들고, MYSQL_DATABASE 하나에만 권한을 준다.
+      # api는 root 대신 이 계정으로 접속한다 (뚫려도 다른 DB나 MySQL 설정은 못 건드린다)
+      MYSQL_USER: ${MYSQL_USER:?.env.prod에 MYSQL_USER가 필요합니다}
+      MYSQL_PASSWORD: ${MYSQL_PASSWORD:?.env.prod에 MYSQL_PASSWORD가 필요합니다}
+      TZ: UTC
+    volumes:
+      - mysql-data:/var/lib/mysql
+    healthcheck:
+      test:
+        [
+          "CMD",
+          "mysqladmin",
+          "ping",
+          "-h",
+          "127.0.0.1",
+          "-p${MYSQL_ROOT_PASSWORD}",
+        ]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+  api:
+    build:
+      context: .
+      dockerfile: apps/api/Dockerfile
+    image: my-notes-api
+    restart: unless-stopped
+    # MySQL이 접속을 받을 수 있는 상태(healthy)가 된 뒤에 켠다
+    depends_on:
+      mysql:
+        condition: service_healthy
+    environment:
+      # 호스트 자리의 mysql: 위의 mysql 서비스 (localhost나 host.docker.internal이 아니다)
+      DATABASE_URL: mysql://${MYSQL_USER}:${MYSQL_PASSWORD}@mysql:3306/${MYSQL_DATABASE}
+      CORS_ORIGINS: ${WEB_URL:?.env.prod에 WEB_URL이 필요합니다}
+      WEB_URL: ${WEB_URL}
+      GOOGLE_CLIENT_ID: ${GOOGLE_CLIENT_ID:?.env.prod에 GOOGLE_CLIENT_ID가 필요합니다}
+      GOOGLE_CLIENT_SECRET: ${GOOGLE_CLIENT_SECRET:?.env.prod에 GOOGLE_CLIENT_SECRET이 필요합니다}
+      GOOGLE_REDIRECT_URI: ${API_URL:?.env.prod에 API_URL이 필요합니다}/api/auth/google/callback
+      ADMIN_EMAILS: ${ADMIN_EMAILS:-}
+    ports:
+      - "4001:4000"
+
+  web:
+    build:
+      context: .
+      dockerfile: apps/web/Dockerfile
+      args:
+        # 브라우저가 부를 api 주소. 빌드할 때 코드에 박힌다 (apps/web/Dockerfile 참고)
+        NEXT_PUBLIC_API_URL: ${API_URL}
+    image: my-notes-web
+    restart: unless-stopped
+    depends_on:
+      - api
+    environment:
+      # 서버 컴포넌트가 부를 api 주소. 같은 Compose 안이라 서비스 이름으로 바로 부른다 (브라우저용 주소와 다르다)
+      API_URL: http://api:4000
+    ports:
+      - "3001:3000"
+
+volumes:
+  mysql-data:
