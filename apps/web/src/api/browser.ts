@@ -25,6 +25,9 @@ async function apiSend<T>(
 
   const response = await fetch(`${API_URL}${path}`, {
     method,
+    // 다른 출처(3000 → 4000)로 보내는 요청에도 쿠키를 붙인다. 기본값(same-origin)이면 쿠키가 빠져서 401이 난다.
+    // 백엔드도 Access-Control-Allow-Credentials: true로 허락해야 브라우저가 응답을 넘겨준다 (apps/api/src/proxy.ts)
+    credentials: "include",
     // 본문이 있을 때만 JSON으로 보낸다 (DELETE는 본문이 없다)
     ...(body !== undefined && {
       headers: { "Content-Type": "application/json" },
@@ -60,6 +63,11 @@ export function updateNote(id: number, input: Partial<NoteInput>) {
 // DELETE /api/notes/:id (노트 삭제). 성공하면 204라 돌려줄 값이 없다
 export function deleteNote(id: number) {
   return apiSend<void>("DELETE", `/api/notes/${id}`);
+}
+
+// POST /api/auth/logout (로그아웃). 백엔드가 세션을 지우고 session 쿠키도 지운다. 성공하면 204
+export function logout() {
+  return apiSend<void>("POST", "/api/auth/logout");
 }
 
 // GET /api/notes?sort&cursor (무한스크롤의 다음 묶음)

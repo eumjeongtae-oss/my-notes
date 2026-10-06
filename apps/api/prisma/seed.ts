@@ -197,7 +197,7 @@ const sampleTopics = [
   },
 ];
 
-function makeSampleNotes(startId: number) {
+function makeSampleNotes(startId: number, userId: number) {
   return Array.from({ length: SAMPLE_COUNT }, (_, index) => {
     const topic = sampleTopics[index % sampleTopics.length];
     const number = String(index + 1).padStart(3, "0");
@@ -208,6 +208,7 @@ function makeSampleNotes(startId: number) {
     );
     return {
       id: startId + index,
+      userId,
       title: `[샘플] ${topic.title} #${number}`,
       content: topic.body,
       createdAt: date,
@@ -225,17 +226,33 @@ function readNote(file: string) {
 }
 
 async function main() {
-  // 노트가 시리즈를 참조하고 있으므로 노트부터 지운다
+  // 예시 데이터의 주인: 가장 먼저 가입한 사용자 (보통 나)
+  // 사용자는 Google 로그인으로만 생기므로, seed 전에 한 번 로그인해 둬야 한다
+  const owner = await prisma.user.findFirst({
+    orderBy: { id: "asc" },
+    select: { id: true },
+  });
+  if (!owner) {
+    throw new Error(
+      "사용자가 없습니다. 먼저 http://localhost:4000/api/auth/google 에서 로그인해 주세요.",
+    );
+  }
+  const userId = owner.id;
+
+  // 노트가 시리즈를 참조하고 있으므로 노트부터 지운다 (사용자와 세션은 지우지 않는다. 로그인이 풀리지 않게)
   await prisma.note.deleteMany();
   await prisma.series.deleteMany();
 
-  await prisma.series.createMany({ data: series });
+  await prisma.series.createMany({
+    data: series.map((item) => ({ ...item, userId })),
+  });
 
   await prisma.note.createMany({
     data: notes.map((note, index) => {
       const date = new Date(`2026-09-30T${note.time}:00+09:00`);
       return {
         id: index + 1,
+        userId,
         title: note.title,
         content: readNote(note.file),
         seriesId: note.series?.id,
@@ -247,7 +264,9 @@ async function main() {
   });
 
   // 학습 노트 다음 id부터 샘플 노트를 넣는다
-  await prisma.note.createMany({ data: makeSampleNotes(notes.length + 1) });
+  await prisma.note.createMany({
+    data: makeSampleNotes(notes.length + 1, userId),
+  });
 
   console.log(
     `시리즈 ${series.length}개, 학습 노트 ${notes.length}개, 샘플 노트 ${SAMPLE_COUNT}개를 넣었습니다.`,

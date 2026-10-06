@@ -1,4 +1,5 @@
 import { parseBody } from "@/lib/parse-body";
+import { requireUser } from "@/lib/require-user";
 import { withErrorHandling } from "@/lib/with-error-handling";
 import { noteIdSchema, updateNoteSchema } from "@/server/notes/schema";
 import { deleteNote, getNoteById, updateNote } from "@/server/notes/service";
@@ -34,16 +35,20 @@ function notFound(id: number) {
 }
 
 // GET /api/notes/:id
-// 노트 하나를 조회한다.
+// 내 노트 하나를 조회한다.
 //   200: 노트 JSON
 //   400: id가 올바른 숫자가 아님 (예: /api/notes/abc)
-//   404: 해당 id의 노트가 없음
+//   401: 로그인 안 함
+//   404: 해당 id의 노트가 없음. 남의 노트여도 404 (403이 아님: "있는데 못 본다"는 것조차 알려주지 않는다)
 export const GET = withErrorHandling(
   async (_request: Request, ctx: Context) => {
+    const auth = await requireUser();
+    if (!auth.success) return auth.response;
+
     const parsedId = await parseNoteId(ctx);
     if (!parsedId.success) return parsedId.response;
 
-    const note = await getNoteById(parsedId.id);
+    const note = await getNoteById(auth.user.id, parsedId.id);
     if (!note) return notFound(parsedId.id);
 
     return Response.json(note);
@@ -55,16 +60,20 @@ export const GET = withErrorHandling(
 // { "seriesName": "..." }는 묶음 옮기기, { "seriesName": null }은 묶음 빼기. 빈 묶음은 자동으로 지워진다
 //   200: 고친 노트 (GET과 같은 모양)
 //   400: id 형식이 틀림, JSON이 깨짐, 입력 규칙에 맞지 않음, 아무 칸도 안 보냄
-//   404: 해당 id의 노트가 없음
+//   401: 로그인 안 함
+//   404: 해당 id의 노트가 없음 (남의 노트도)
 export const PATCH = withErrorHandling(
   async (request: Request, ctx: Context) => {
+    const auth = await requireUser();
+    if (!auth.success) return auth.response;
+
     const parsedId = await parseNoteId(ctx);
     if (!parsedId.success) return parsedId.response;
 
     const parsedBody = await parseBody(request, updateNoteSchema);
     if (!parsedBody.success) return parsedBody.response;
 
-    const note = await updateNote(parsedId.id, parsedBody.data);
+    const note = await updateNote(auth.user.id, parsedId.id, parsedBody.data);
     if (!note) return notFound(parsedId.id);
 
     return Response.json(note);
@@ -75,13 +84,17 @@ export const PATCH = withErrorHandling(
 // 노트를 지운다. 묶음의 마지막 노트였다면 묶음도 같이 지워진다.
 //   204: 지움 (돌려줄 내용이 없어서 본문 없음)
 //   400: id 형식이 틀림
-//   404: 해당 id의 노트가 없음
+//   401: 로그인 안 함
+//   404: 해당 id의 노트가 없음 (남의 노트도)
 export const DELETE = withErrorHandling(
   async (_request: Request, ctx: Context) => {
+    const auth = await requireUser();
+    if (!auth.success) return auth.response;
+
     const parsedId = await parseNoteId(ctx);
     if (!parsedId.success) return parsedId.response;
 
-    const deleted = await deleteNote(parsedId.id);
+    const deleted = await deleteNote(auth.user.id, parsedId.id);
     if (!deleted) return notFound(parsedId.id);
 
     return new Response(null, { status: 204 });

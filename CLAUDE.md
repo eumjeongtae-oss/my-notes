@@ -2,7 +2,7 @@
 
 # my-notes
 
-velog 형식의 화면으로 나만 보는 개인 마크다운 노트 앱. 계획과 진행 상황은 `docs/roadmap.md`에 있다.
+velog 형식의 화면으로 쓰는 개인 마크다운 노트 앱. 누구나 Google로 가입할 수 있고, **각자 자기 노트만 본다** (공개 글 없음). 계획과 진행 상황은 `docs/roadmap.md`에 있다.
 
 화면에 보이는 사이트 이름은 **차곡 (Chagok)** 이다. 프로젝트(레포, 폴더, 패키지) 이름은 그대로 `my-notes`다.
 
@@ -35,8 +35,8 @@ velog 형식의 화면으로 나만 보는 개인 마크다운 노트 앱. 계�
 - `pnpm dev`: MySQL을 먼저 띄운 뒤(`predev`) 모든 앱의 개발 서버를 동시에 실행 (web: http://localhost:3000, api: http://localhost:4000)
 - `pnpm build` / `pnpm lint` / `pnpm typecheck`: 모든 앱에서 빌드, 린트, 타입 검사
 - `pnpm format` / `pnpm format:check`: 저장소 전체 Prettier (Tailwind 클래스 자동 정렬 포함)
-- `pnpm db:migrate --name 변경내용`: 마이그레이션 만들고 DB에 반영. 이후 `pnpm db:generate`로 클라이언트 코드 재생성 (Prisma 7은 자동 생성하지 않음)
-- `pnpm db:seed`: 개발용 예시 데이터로 초기화 (기존 데이터 삭제됨)
+- `pnpm db:migrate --name 변경내용`: 마이그레이션 만들고 DB에 반영. 이후 `pnpm db:generate`로 클라이언트 코드 재생성 (Prisma 7은 자동 생성하지 않음). **generate 후에는 `pnpm dev`를 다시 켠다.** 개발 서버는 `db.ts`가 `globalThis`에 보관한 예전 클라이언트를 계속 써서 새 모델(`prisma.user` 등)이 없다는 에러가 난다
+- `pnpm db:seed`: 개발용 예시 데이터로 초기화 (기존 노트와 묶음 삭제됨). 예시 데이터는 가장 먼저 가입한 사용자의 것이 되므로 **먼저 한 번 로그인**해야 한다 (사용자와 세션은 지우지 않는다. **모든 사용자의** 노트와 묶음을 지우므로 개발 DB에서만 쓴다)
 - `pnpm db:studio`: 브라우저에서 DB 내용 보기
 
 작업을 마치면 `typecheck`, `lint`, `format:check`, `build`를 통과시킨다.
@@ -46,27 +46,34 @@ velog 형식의 화면으로 나만 보는 개인 마크다운 노트 앱. 계�
 앱마다 자기 `.env`를 가진다 (회사에서 레포마다 따로 있는 것과 같다). 각 폴더의 `.env.example`을 복사해서 만든다.
 
 - 루트 `.env`: MySQL 컨테이너 설정 (`compose.yaml`이 읽음)
-- `apps/api/.env`: `DATABASE_URL` (DB 주소는 백엔드만 안다), `CORS_ORIGINS` (브라우저 호출을 허락할 프론트 주소)
+- `apps/api/.env`: `DATABASE_URL` (DB 주소는 백엔드만 안다), `CORS_ORIGINS` (브라우저 호출을 허락할 프론트 주소), `GOOGLE_CLIENT_ID`, `GOOGLE_CLIENT_SECRET`(비밀), `GOOGLE_REDIRECT_URI`, `ADMIN_EMAILS` (처음 가입할 때 이미지 권한을 켤 이메일), `WEB_URL` (로그인 후 돌려보낼 프론트 주소)
 - `apps/web/.env`: `API_URL` (서버 컴포넌트용 백엔드 주소), `NEXT_PUBLIC_API_URL` (브라우저용 백엔드 주소, 누구나 볼 수 있으니 비밀 값 금지). 프론트는 DB 정보를 갖지 않는다
 
 ## 구조: apps/web (프론트)
 
 - `src/app/(main)/`: 헤더가 있는 화면들 (홈, 읽기). 라우트 그룹이라 URL에는 나타나지 않음
+- `src/app/(main)/layout.tsx`: 헤더 레이아웃. `getCurrentUser()`로 내 정보를 가져와 헤더에 넘기고, 없으면(만료된 쿠키) `/login`으로
+- `src/app/(main)/_components/user-menu.tsx`: 헤더 오른쪽 프로필 사진 + 메뉴(이름, 이메일, 로그아웃). HTML `<details>`에 바깥 클릭, Esc 닫기만 직접 붙였다. 로그아웃하면 `queryClient.clear()`로 React Query 기억을 모두 지운다 (다른 계정의 목록이 보이지 않게)
+- `next.config.ts`: `images.remotePatterns`에 Google 프로필 사진 주소(`lh3.googleusercontent.com`)를 허락했다. 외부 이미지를 `next/image`로 보여주려면 여기에 추가한다
+- `src/app/error.tsx`: 가장 바깥 에러 화면 (헤더 없음). `error.tsx`는 같은 폴더의 `layout.tsx` 에러를 잡지 않아서, `(main)/layout.tsx`(내 정보 조회)와 로그인 페이지의 에러는 여기로 온다
 - `src/app/(main)/not-found.tsx`, `error.tsx`: 헤더 안에 보이는 404, 에러 화면. `(main)` 밖(`/write`, 없는 주소)은 `src/app/not-found.tsx`, `src/app/write/error.tsx`가 맡는다
 - `src/app/_components/providers.tsx`: React Query Provider (`"use client"`). 루트 `layout.tsx`가 감싼다. 서버는 요청마다, 브라우저는 하나의 QueryClient
-- `src/app/icon.svg`: 파비콘 (Next.js 파일 규칙). 헤더 로고 `(main)/_components/logo.tsx`와 같은 모양이라 함께 고친다
+- `src/app/icon.svg`: 파비콘 (Next.js 파일 규칙). 로고 `src/components/logo.tsx`(헤더, 로그인 페이지)와 같은 모양이라 함께 고친다
+- `src/app/login/page.tsx`: 로그인 페이지 (헤더 없음). "Google로 계속하기"는 백엔드 `/api/auth/google`로 이동하는 `<a>`. 실패하면 `?error=`로 돌아와 빨간 글씨. 이미 로그인했으면 홈으로 (api에 물어서 확인)
+- `src/proxy.ts`: 페이지를 그리기 전에 `session` 쿠키가 **없으면** `/login`으로 보낸다. 쿠키가 있는지만 본다 (진짜 확인은 api). 만료된 쿠키는 api 401 → `server.ts`가 `/login`으로
 - 화면은 velog 모티브: 목록형 홈(카드형 보기는 없음), 읽기 페이지, 헤더 없는 전체 화면 글쓰기(`/write`, 왼쪽 에디터 + 오른쪽 미리보기)
 - 컴포넌트 위치는 colocation 방식이다 (파일명은 kebab-case, export는 named export)
   - 한 라우트(그룹)에서만 쓰면 그 폴더의 `_components/`에 둔다 (예: `src/app/(main)/_components/header.tsx`). `_`로 시작하는 폴더는 라우팅에서 제외된다
   - 여러 라우트에서 같이 쓰면 `src/components/`에 둔다 (예: `markdown-preview.tsx`)
   - 한 곳에서만 쓰던 컴포넌트를 다른 라우트에서도 쓰게 되면 `src/components/`로 옮긴다
 - `src/api/`: 백엔드 API 호출 함수. 화면은 `fetch`를 직접 쓰지 않고 여기 함수(`getNote` 등)만 호출한다
-  - `server.ts`: 서버 컴포넌트용 공통 호출 함수 (`API_URL` 붙이기, 실패 시 `ApiError`). `apiGet`은 `connection()`을 먼저 기다려서 페이지가 빌드 때 데이터로 굳지 않게 한다. 하나를 조회할 때는 `apiGetOrNull`(404, 400이면 `null` → 화면에서 `notFound()`)
+  - `server.ts`: 서버 컴포넌트용 공통 호출 함수 (`API_URL` 붙이기, 실패 시 `ApiError`). `apiGet`은 브라우저가 보낸 `session` 쿠키를 api 요청에 그대로 붙이고(서버끼리 fetch는 쿠키를 자동으로 안 붙인다), 401이면 `/login`으로 보낸다. `cookies()`를 쓰므로 페이지가 빌드 때 데이터로 굳지 않는다. 하나를 조회할 때는 `apiGetOrNull`(404, 400이면 `null` → 화면에서 `notFound()`)
   - `errors.ts`: `ApiError`와 `getErrorMessage`(실패 문구. 버튼 옆 빨간 글씨에 쓴다)
   - `notes.ts`: 노트 API. JSON의 날짜 문자열을 `Date`로 바꿔서 돌려준다
-  - `server.ts`, `notes.ts`, `series.ts`는 `server-only`(서버 컴포넌트 전용)
+  - `auth.ts`: `getCurrentUser()` (`GET /api/auth/me`, 로그인 안 했으면 `null`. 401이어도 `/login`으로 보내지 않는다)
+  - `server.ts`, `notes.ts`, `series.ts`, `auth.ts`는 `server-only`(서버 컴포넌트 전용)
   - `types.ts`: 응답 타입과 날짜 변환 (서버용, 브라우저용 공용)
-  - `browser.ts`: 브라우저(클라이언트 컴포넌트)에서 부르는 함수. `NEXT_PUBLIC_API_URL` 사용
+  - `browser.ts`: 브라우저(클라이언트 컴포넌트)에서 부르는 함수. `NEXT_PUBLIC_API_URL` 사용. 다른 출처(3000 → 4000)라서 `credentials: "include"`로 쿠키를 붙인다 (api의 `proxy.ts`가 `Access-Control-Allow-Credentials: true`로 허락)
   - `query-keys.ts`: React Query 이름표(query key). 문자열을 직접 쓰지 않고 `noteKeys`를 쓴다
   - **노트를 저장, 수정, 삭제한 뒤에는 `queryClient.removeQueries({ queryKey: noteKeys.lists() })`로 홈 목록 기억을 지운다.** 안 지우면 홈에 예전 목록이 보인다
 - `src/lib/`: 서버와 브라우저 어디서나 쓰는 순수 함수 (`format.ts`: 날짜 표시, `note-list-params.ts`: 홈 검색어와 정렬 URL 해석)
@@ -82,15 +89,16 @@ velog 형식의 화면으로 나만 보는 개인 마크다운 노트 앱. 계�
   - 중복(@unique) 같은 "지금 데이터와 충돌"은 409 Conflict. 미리 조회하지 말고 만들어 보고 Prisma `P2002`를 잡는다
   - **모든 API 함수는 `withErrorHandling`(`src/lib/with-error-handling.ts`)으로 감싼다** (`export const GET = withErrorHandling(async (request) => ...)`). 예상 못 한 에러는 서버 로그에 원인을 남기고 500 `{ message }`로 응답한다. 에러 내용(DB 주소, SQL)을 응답에 넣지 않는다
   - 400, 404처럼 예상한 에러는 각 API가 직접 응답한다
+  - **노트, 묶음 API는 모두 로그인이 필요하다.** 맨 앞에서 `const auth = await requireUser(); if (!auth.success) return auth.response;` (401). 로그인은 쿠키(`session`, HttpOnly) + DB 세션 방식이다
   - 목록 API는 배열 대신 `{ items }` 객체로 응답한다 (무한스크롤 때 `nextCursor`를 추가할 수 있게)
   - 요청 본문은 `parseBody(request, 스키마)`(`src/lib/parse-body.ts`)로 읽고 검사한다. URL의 id도 zod 스키마(`noteIdSchema`)로 검사한다
   - 검색(`q`)은 제목과 본문의 LIKE 검색이다. `%`, `_`는 LIKE의 특수 기호라 `escapeLike`로 이스케이프한다 (안 하면 "%" 검색에 모든 노트가 나옴)
   - 목록은 커서 페이지네이션이다: `?limit=20&cursor=...` → `{ items, nextCursor }`. 커서는 마지막 노트의 `createdAt`과 `id`를 base64url로 묶은 불투명한 문자열 (`server/notes/cursor.ts`)
-  - 현재 API: `GET /api/health`, `GET /api/notes?q=&sort=latest|oldest&limit=&cursor=`, `POST /api/notes`, `GET /api/notes/:id`, `PATCH /api/notes/:id`, `DELETE /api/notes/:id`, `GET /api/series`, `GET /api/series/:id`
+  - 현재 API: `GET /api/health`, `GET /api/notes?q=&sort=latest|oldest&limit=&cursor=`, `POST /api/notes`, `GET /api/notes/:id`, `PATCH /api/notes/:id`, `DELETE /api/notes/:id`, `GET /api/series`, `GET /api/series/:id`, `GET /api/auth/google`(로그인 시작), `GET /api/auth/google/callback`, `GET /api/auth/me`, `POST /api/auth/logout`
 - `requests.http`: API를 직접 호출해 보는 파일 (VS Code REST Client). API를 추가하면 여기에도 예시 요청을 추가한다
 - `prisma/schema.prisma`: DB 설계도(모델). 설정은 `prisma7.config.ts`, 생성 코드는 `src/generated/prisma`(git 제외)
 - `prisma/seed.ts`, `prisma/seed-notes/*.md`: 개발용 예시 데이터
-- `src/lib/`: DB와 상관없는 코드 (`markdown.ts`: 목록용 요약문, `with-error-handling.ts`: API 공통 에러 처리)
+- `src/lib/`: DB와 상관없는 코드 (`markdown.ts`: 목록용 요약문, `with-error-handling.ts`: API 공통 에러 처리, `auth-cookies.ts`: 로그인 쿠키 읽기/쓰기, `require-user.ts`: 로그인 확인)
 - `src/server/`: 서버 전용 코드
   - `db.ts`: 앱 전체가 쓰는 Prisma 클라이언트 하나 (`server-only`, 개발 환경 SQL 로그)
   - `prisma-client.ts`: Prisma 클라이언트를 만드는 방법 (앱과 seed가 공유)
@@ -98,6 +106,9 @@ velog 형식의 화면으로 나만 보는 개인 마크다운 노트 앱. 계�
     - 묶음 순서(`seriesOrder`)는 서버가 정한다: 넣으면 맨 뒤, 빠지면(삭제, 이동, 빼기) 뒤 번호를 당겨 항상 1, 2, 3처럼 빈틈없게. 묶음 생성(`upsert`)과 빈 묶음 삭제도 같은 곳에서 한다. 여러 단계를 바꾸는 작업은 `prisma.$transaction`으로 묶는다
   - `notes/schema.ts`: 노트 API가 받는 입력 규칙 (zod). 숫자 제한은 `schema.prisma`와 맞춘다
   - `series/service.ts`, `series/schema.ts`: 묶음(series) 조회
+  - `auth/session.ts`: 로그인 세션 만들기, 확인, 삭제. 기한은 로그인부터 **30일 고정**(연장 없음, 지나면 다시 로그인). 다시 로그인할 때 이 브라우저의 예전 세션과 그 사람의 기한 지난 세션을 지운다. 쿠키에는 무작위 토큰, DB(`sessions.id`)에는 그 SHA-256 값만 둔다
+  - `auth/google.ts`: arctic(Google OAuth) 설정. `users/service.ts`: Google 사용자 찾기/만들기(`googleId`로 찾는다)
+  - **노트, 묶음 서비스 함수는 모두 `userId`를 첫 인자로 받고, 모든 조회와 수정에 `userId` 조건을 붙인다** (`where: { id, userId }`). 하나라도 빠지면 남의 노트가 보인다. 남의 노트, 묶음은 403이 아니라 404로 "없는 것"처럼 응답한다. 묶음 이름은 사람마다 하나(`@@unique([userId, name])`)
   - 도메인(notes, series 등)마다 폴더를 두고 `service.ts`와 `schema.ts`로 나눈다
   - **목록에서 관계된 개수나 데이터를 반복문으로 하나씩 조회하지 않는다 (N+1 문제).** `_count`, `select`/`include`로 한 번에 가져온다
   - URL id 검사는 `idSchema("노트")`처럼 `src/lib/id-schema.ts`를 쓴다
