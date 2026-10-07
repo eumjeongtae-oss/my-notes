@@ -77,7 +77,12 @@ apps/api  백엔드 Next.js (포트 4000)  REST API, Prisma, MySQL
    2. ✅ web Docker 이미지 (`NEXT_PUBLIC_API_URL`은 빌드할 때 코드에 박혀서 `--build-arg`로 받는다, `.next/static`과 `public`은 직접 복사)
    3. ✅ 배포용 `compose.prod.yaml`로 web + api + mysql 함께 띄우기, 켤 때마다 마이그레이션 자동 실행(`migrate` 서비스), 앱 전용 DB 계정. 로컬에서 로그인까지 확인(Google Console에 `http://localhost:4001/...` 리디렉션 URI 추가), 개발 DB의 노트를 덤프 → 복원으로 옮기는 연습 (4-7에서 라이브로 옮긴다)
    4. ✅ 쿠키 도메인(`COOKIE_DOMAIN`): `api.` 주소가 만든 세션 쿠키를 web 주소에서도 보이게 (로컬은 비워 둔다)
-   5. AWS 계정(**무료 플랜**: 6개월, 크레딧 최대 $200 안에서는 청구 자체가 안 됨. 6개월 뒤 유료 전환), 루트 MFA, Budgets 알림. 체크카드면 카드사 앱에서 해외결제 한도도 낮게
+   5. AWS 계정(**무료 플랜**: 6개월, 크레딧 최대 $200 안에서는 청구 자체가 안 됨. 6개월 뒤 유료 전환), MFA, 지출 한도. 체크카드면 카드사 앱에서 해외결제 한도도 낮게
+      - ✅ 가입 (2026-10-07, 무료 플랜 크레딧 $100, 183일)
+      - 계정이 AWS의 **새 간소화 버전**(프로젝트, 팀, AWS Builder ID 로그인)으로 만들어졌다. 루트 사용자 대신 Builder ID로 로그인하고, 설정은 `https://settings.aws.com`에서 한다. 이 버전에는 **지출 한도(spend limit)**가 있어 무료 플랜이 끝난 뒤에도 상한선으로 쓴다
+      - **"고급 기능 활성화"는 하지 않는다**: 유료 플랜이 필요하고, 지출 한도가 사라지며, 되돌릴 수 없다. EC2 + Docker 계획에는 필요 없다 (EC2를 만들 때 간소화 버전에서 되는지 확인)
+      - 남은 일: Builder ID MFA, 지출 한도. 가입 직후 `profile.aws.amazon.com`, `settings.aws.com`이 `ERR-837 계정 문제`로 열리지 않음 → 계정 확인이 끝나기를 기다렸다가 다시 시도, 계속되면 AWS Support(무료)에 요청 ID와 함께 문의
+      - MFA를 켜기 전에는 EC2(과금 리소스)를 만들지 않는다
    6. 도메인 `chagoknotes.com` 구입 (무료 플랜은 구매가 막힐 수 있어 AWS 밖, Cloudflare 등에서 연 $10 정도), DNS 연결
    7. EC2 만들기(보안 그룹, 고정 IP, Docker), 손으로 처음 배포
    8. Caddy로 HTTPS, Google Console에 운영 리디렉션 URI 추가
