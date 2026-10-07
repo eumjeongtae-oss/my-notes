@@ -1,0 +1,14 @@
+# Caddy 설정: 서버 맨 앞(80, 443번 문)에서 요청을 받아 주소에 따라 web이나 api로 보낸다.
+# 주소마다 HTTPS 인증서(Let's Encrypt, 무료)를 자동으로 받고, 만료 전에 자동으로 갱신한다.
+# http://로 들어오면 https://로 자동으로 옮겨 준다.
+#
+# 두 주소 모두 DNS(Cloudflare)에서 서버 IP를 가리켜야 인증서를 받을 수 있다.
+# web:3000, api:4000은 compose.prod.yaml의 서비스 이름 (같은 Compose 네트워크 안이라 이름으로 부른다)
+
+chagoknotes.com {
+	reverse_proxy web:3000
+}
+
+api.chagoknotes.com {
+	reverse_proxy api:4000
+}
