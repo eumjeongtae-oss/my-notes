@@ -86,7 +86,7 @@ apps/api  백엔드 Next.js (포트 4000)  REST API, Prisma, MySQL
       - **리전은 시드니(`ap-southeast-2`)**: 간소화 버전은 가입 때 정해진 시드니만 쓸 수 있고, 서울(`ap-northeast-2`)은 고급 기능이 필요하다. 기능과 가격은 같고 한국에서 요청마다 약 0.15초 느리다 (에디터 입력은 영향 없음). 데이터가 호주에 저장되므로 개인정보 처리방침(4-11)에 국외 이전을 적는다. **유료로 바꿀 때(2027-04) 서울로 이사**를 검토한다 (새 EC2 + 덤프 → 복원 + DNS 변경)
       - ✅ Builder ID MFA (인증 앱). 가입 직후 `profile.aws.amazon.com`, `settings.aws.com`이 `ERR-837 계정 문제`로 열리지 않음 → 계정 확인이 끝나기를 기다렸다가 다시 시도, 계속되면 AWS Support(무료)에 요청 ID와 함께 문의
       - MFA를 켜기 전에는 EC2(과금 리소스)를 만들지 않는다
-   6. 도메인 `chagoknotes.com` 구입 (무료 플랜은 구매가 막힐 수 있어 AWS 밖, Cloudflare에서 연 $10 정도). DNS도 Cloudflare에서 관리한다 (Route 53 월 $0.5 불필요, 나중에 Cloudflare CDN으로 정적 파일을 한국 근처에서 보낼 수 있다)
+   6. ✅ 도메인 `chagoknotes.com` 구입 (2026-10-07, Cloudflare, 1년, 자동 갱신. 만료 2027-10-07. 무료 플랜은 구매가 막힐 수 있어 AWS 밖에서 샀다). Cloudflare 계정도 2단계 인증. 서버 IP를 가리키는 DNS 연결은 4-8에서. DNS도 Cloudflare에서 관리한다 (Route 53 월 $0.5 불필요, 나중에 Cloudflare CDN으로 정적 파일을 한국 근처에서 보낼 수 있다)
    7. EC2 만들기(보안 그룹, 고정 IP, Docker), 손으로 처음 배포
    8. Caddy로 HTTPS, Google Console에 운영 리디렉션 URI 추가
    9. GitHub Actions 자동 배포 (이미지 빌드 → GHCR → EC2)
