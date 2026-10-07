@@ -81,7 +81,7 @@ apps/api  백엔드 Next.js (포트 4000)  REST API, Prisma, MySQL
       - ✅ 가입 (2026-10-07, 무료 플랜 크레딧 $100, 183일)
       - 계정이 AWS의 **새 간소화 버전**(프로젝트, 팀, AWS Builder ID 로그인)으로 만들어졌다. 루트 사용자 대신 Builder ID로 로그인하고, 설정은 `https://settings.aws.com`에서 한다. 이 버전에는 **지출 한도(spend limit)**가 있어 무료 플랜이 끝난 뒤에도 상한선으로 쓴다
       - **"고급 기능 활성화"는 하지 않는다**: 유료 플랜이 필요하고, 지출 한도가 사라지며, 되돌릴 수 없다. EC2 + Docker 계획에는 필요 없다 (EC2를 만들 때 간소화 버전에서 되는지 확인)
-      - 남은 일: Builder ID MFA, 지출 한도. 가입 직후 `profile.aws.amazon.com`, `settings.aws.com`이 `ERR-837 계정 문제`로 열리지 않음 → 계정 확인이 끝나기를 기다렸다가 다시 시도, 계속되면 AWS Support(무료)에 요청 ID와 함께 문의
+      - ✅ Builder ID MFA (인증 앱). 남은 일: 지출 한도. 가입 직후 `profile.aws.amazon.com`, `settings.aws.com`이 `ERR-837 계정 문제`로 열리지 않음 → 계정 확인이 끝나기를 기다렸다가 다시 시도, 계속되면 AWS Support(무료)에 요청 ID와 함께 문의
       - MFA를 켜기 전에는 EC2(과금 리소스)를 만들지 않는다
    6. 도메인 `chagoknotes.com` 구입 (무료 플랜은 구매가 막힐 수 있어 AWS 밖, Cloudflare 등에서 연 $10 정도), DNS 연결
    7. EC2 만들기(보안 그룹, 고정 IP, Docker), 손으로 처음 배포
