@@ -38,6 +38,13 @@ velog 형식의 화면으로 쓰는 개인 마크다운 노트 앱. 누구나 Go
 - `pnpm db:migrate --name 변경내용`: 마이그레이션 만들고 DB에 반영. 이후 `pnpm db:generate`로 클라이언트 코드 재생성 (Prisma 7은 자동 생성하지 않음). **generate 후에는 `pnpm dev`를 다시 켠다.** 개발 서버는 `db.ts`가 `globalThis`에 보관한 예전 클라이언트를 계속 써서 새 모델(`prisma.user` 등)이 없다는 에러가 난다
 - `pnpm db:seed`: 개발용 예시 데이터로 초기화 (기존 노트와 묶음 삭제됨). 예시 데이터는 가장 먼저 가입한 사용자의 것이 되므로 **먼저 한 번 로그인**해야 한다 (사용자와 세션은 지우지 않는다. **모든 사용자의** 노트와 묶음을 지우므로 개발 DB에서만 쓴다)
 - `pnpm db:studio`: 브라우저에서 DB 내용 보기
+- `docker build -f apps/api/Dockerfile -t my-notes-api .`: api 배포용 이미지 만들기 (맨 끝 `.`: 저장소 루트가 빌드 재료). 실행은 `docker run -p 4001:4000 -e DATABASE_URL=... my-notes-api`. 컨테이너 안의 `localhost`는 컨테이너 자신이라 로컬 MySQL은 `host.docker.internal`로 부른다
+- `docker build -f apps/web/Dockerfile --build-arg NEXT_PUBLIC_API_URL=http://localhost:4001 -t my-notes-web .`: web 배포용 이미지. 실행은 `docker run -p 3001:3000 -e API_URL=http://host.docker.internal:4001 my-notes-web` (api 컨테이너를 먼저 켠다)
+- `pnpm prod ...`: 배포용 Compose(`docker compose -f compose.prod.yaml --env-file .env.prod`)의 줄임말. 뒤에 Compose 명령을 붙인다
+  - `pnpm prod up -d --build --wait`: 이미지를 만들고 mysql → migrate(테이블 만들기, 끝나면 꺼짐) → api → web 순서로 켠다 (web 3001, api 4001). 개발용과 프로젝트 이름(`my-notes-prod`)과 DB가 따로다
+  - `pnpm prod ps`, `pnpm prod logs api`, `pnpm prod down` (`down -v`는 배포 연습용 DB 데이터까지 삭제)
+  - DB 보기: `pnpm prod exec mysql mysql -u my_notes_app -p my_notes` (MySQL은 밖으로 열지 않아서 컨테이너 안에서 본다)
+- DB 옮기기(덤프 → 복원): 개발 컨테이너에서 `mysqldump --no-create-info`로 데이터만 `/tmp/dump.sql`에 뽑고(`sessions`, `_prisma_migrations`는 제외), `docker cp`로 꺼내 `backups/`(git 제외)에 두고, 대상 컨테이너에 넣어 `mysql < /tmp/dump.sql`. 대상 DB는 migrate만 끝난 빈 상태여야 한다 (로그인 전). PowerShell `>`는 한글을 깨뜨리므로 `--result-file`을 쓴다
 
 작업을 마치면 `typecheck`, `lint`, `format:check`, `build`를 통과시킨다.
 
@@ -46,7 +53,8 @@ velog 형식의 화면으로 쓰는 개인 마크다운 노트 앱. 누구나 Go
 앱마다 자기 `.env`를 가진다 (회사에서 레포마다 따로 있는 것과 같다). 각 폴더의 `.env.example`을 복사해서 만든다.
 
 - 루트 `.env`: MySQL 컨테이너 설정 (`compose.yaml`이 읽음)
-- `apps/api/.env`: `DATABASE_URL` (DB 주소는 백엔드만 안다), `CORS_ORIGINS` (브라우저 호출을 허락할 프론트 주소), `GOOGLE_CLIENT_ID`, `GOOGLE_CLIENT_SECRET`(비밀), `GOOGLE_REDIRECT_URI`, `ADMIN_EMAILS` (처음 가입할 때 이미지 권한을 켤 이메일), `WEB_URL` (로그인 후 돌려보낼 프론트 주소)
+- 루트 `.env.prod`: 배포용 Compose(`compose.prod.yaml`)가 읽는 값 전부 (MySQL root와 앱 전용 계정 비밀번호, `WEB_URL`, `API_URL`, Google, `ADMIN_EMAILS`). 개발용과 다른 비밀번호를 쓰고, 비밀번호는 영어와 숫자만 (DB 주소 안에 들어가므로)
+- `apps/api/.env`: `DATABASE_URL` (DB 주소는 백엔드만 안다), `CORS_ORIGINS` (브라우저 호출을 허락할 프론트 주소), `GOOGLE_CLIENT_ID`, `GOOGLE_CLIENT_SECRET`(비밀), `GOOGLE_REDIRECT_URI`, `ADMIN_EMAILS` (처음 가입할 때 이미지 권한을 켤 이메일), `WEB_URL` (로그인 후 돌려보낼 프론트 주소), `COOKIE_DOMAIN` (세션 쿠키를 web과 api가 함께 쓸 도메인. 배포는 `chagoknotes.com`, 로컬은 비움)
 - `apps/web/.env`: `API_URL` (서버 컴포넌트용 백엔드 주소), `NEXT_PUBLIC_API_URL` (브라우저용 백엔드 주소, 누구나 볼 수 있으니 비밀 값 금지). 프론트는 DB 정보를 갖지 않는다
 
 ## 구조: apps/web (프론트)
@@ -55,6 +63,7 @@ velog 형식의 화면으로 쓰는 개인 마크다운 노트 앱. 누구나 Go
 - `src/app/(main)/layout.tsx`: 헤더 레이아웃. `getCurrentUser()`로 내 정보를 가져와 헤더에 넘기고, 없으면(만료된 쿠키) `/login`으로
 - `src/app/(main)/_components/user-menu.tsx`: 헤더 오른쪽 프로필 사진 + 메뉴(이름, 이메일, 로그아웃). HTML `<details>`에 바깥 클릭, Esc 닫기만 직접 붙였다. 로그아웃하면 `queryClient.clear()`로 React Query 기억을 모두 지운다 (다른 계정의 목록이 보이지 않게)
 - `next.config.ts`: `images.remotePatterns`에 Google 프로필 사진 주소(`lh3.googleusercontent.com`)를 허락했다. 외부 이미지를 `next/image`로 보여주려면 여기에 추가한다
+- `Dockerfile`: 배포용 이미지 (구조는 api와 같다). `NEXT_PUBLIC_API_URL`은 `next build` 때 브라우저 코드에 글자로 박히므로 실행이 아니라 **빌드할 때** `--build-arg`로 넣는다 (없으면 빌드가 멈춘다). `API_URL`은 서버에서 실행할 때 읽으므로 `docker run -e`로 넣는다. standalone은 `.next/static`과 `public`을 빼므로 직접 복사한다
 - `src/app/error.tsx`: 가장 바깥 에러 화면 (헤더 없음). `error.tsx`는 같은 폴더의 `layout.tsx` 에러를 잡지 않아서, `(main)/layout.tsx`(내 정보 조회)와 로그인 페이지의 에러는 여기로 온다
 - `src/app/(main)/not-found.tsx`, `error.tsx`: 헤더 안에 보이는 404, 에러 화면. `(main)` 밖(`/write`, 없는 주소)은 `src/app/not-found.tsx`, `src/app/write/error.tsx`가 맡는다
 - `src/app/_components/providers.tsx`: React Query Provider (`"use client"`). 루트 `layout.tsx`가 감싼다. 서버는 요청마다, 브라우저는 하나의 QueryClient
@@ -98,6 +107,7 @@ velog 형식의 화면으로 쓰는 개인 마크다운 노트 앱. 누구나 Go
 - `requests.http`: API를 직접 호출해 보는 파일 (VS Code REST Client). API를 추가하면 여기에도 예시 요청을 추가한다
 - `prisma/schema.prisma`: DB 설계도(모델). 설정은 `prisma7.config.ts`, 생성 코드는 `src/generated/prisma`(git 제외)
 - `prisma/seed.ts`, `prisma/seed-notes/*.md`: 개발용 예시 데이터
+- `Dockerfile`: 배포용 이미지. 3단계(deps 설치 → builder 빌드 → runner)로 나누고 최종 이미지에는 `.next/standalone`만 담는다 (`next.config.ts`의 `output: "standalone"`, 모노레포라 `outputFileTracingRoot`는 저장소 루트). 비밀 값(`.env`)은 이미지에 넣지 않고 실행할 때 환경 변수로 넣는다 (루트 `.dockerignore`). `next build`가 `db.ts`를 불러오므로 빌드 단계에만 가짜 `DATABASE_URL`을 준다
 - `src/lib/`: DB와 상관없는 코드 (`markdown.ts`: 목록용 요약문, `with-error-handling.ts`: API 공통 에러 처리, `auth-cookies.ts`: 로그인 쿠키 읽기/쓰기, `require-user.ts`: 로그인 확인)
 - `src/server/`: 서버 전용 코드
   - `db.ts`: 앱 전체가 쓰는 Prisma 클라이언트 하나 (`server-only`, 개발 환경 SQL 로그)

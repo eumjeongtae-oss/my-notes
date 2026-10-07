@@ -33,6 +33,7 @@ yarn-error.log*
 # env files (can opt-in for committing if needed)
 .env*
 !.env.example
+!.env.*.example
 
 # vercel
 .vercel
@@ -42,3 +43,6 @@ yarn-error.log*
 next-env.d.ts
 
 apps/*/src/generated/prisma
+
+# DB 덤프(백업) 파일. 개인 데이터라 git과 Docker 이미지에 넣지 않는다
+/backups

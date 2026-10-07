@@ -20,11 +20,11 @@ apps/api  백엔드 Next.js (포트 4000)  REST API, Prisma, MySQL
 | 백엔드        | Next.js 16 Route Handler로 REST API (`apps/api`)                      |
 | 스타일        | Tailwind CSS 4, @tailwindcss/typography                               |
 | 에디터        | CodeMirror 6 + react-markdown (remark-gfm)                            |
-| DB            | MySQL 8 (개발은 Docker Compose로 로컬 실행, 배포 DB는 5단계에서 결정) |
+| DB            | MySQL 8 (개발은 Docker Compose로 로컬 실행, 배포는 EC2 안의 컨테이너) |
 | ORM           | Prisma (팀 프로젝트와 같은 스택)                                      |
 | 로그인        | Google 로그인 (누구나 가입), arctic + DB 세션                         |
 | 이미지 저장   | AWS S3 (업로드 권한이 있는 사용자만)                                  |
-| 배포          | AWS EC2 + Docker, GitHub Actions로 자동 배포                          |
+| 배포          | AWS EC2 + Docker Compose, Caddy(HTTPS), GHCR, GitHub Actions          |
 | 패키지 매니저 | pnpm                                                                  |
 
 ## MVP 범위
@@ -70,6 +70,28 @@ apps/api  백엔드 Next.js (포트 4000)  REST API, Prisma, MySQL
    4. ✅ 노트와 묶음에 주인(`userId`) 추가 (기존 노트는 첫 사용자에게 옮기는 데이터 마이그레이션, 묶음 이름은 사람마다 하나), 모든 노트, 묶음 API를 로그인한 사람의 것만 다루게 보호 (남의 노트 id는 404)
    5. ✅ web: 쿠키 전달 (브라우저 요청, 서버 컴포넌트), 로그인 페이지, 헤더의 프로필 메뉴와 로그아웃
 4. **배포**: 프론트와 백엔드를 각각 Docker 이미지로, EC2, 배포용 DB, GitHub Actions, 도메인과 HTTPS. AWS Budgets 알림, 개인정보 처리방침 페이지, Google 앱 게시(테스트 → 프로덕션)
+   - 구성: EC2 한 대(t3.small)에 Docker Compose로 Caddy(HTTPS 자동) + web + api + mysql. 주소는 `chagoknotes.com`(web), `api.chagoknotes.com`(api). `chagok.app` 등 짧은 이름은 이미 주인이 있었다
+   - DB는 RDS(월 $20 이상) 대신 EC2 안의 MySQL 컨테이너. 대신 매일 백업을 S3로. 예상 비용 월 약 $25 + 도메인
+   - GitHub 레포: https://github.com/eumjeongtae-oss/my-notes (공개). 커밋 이메일은 GitHub noreply 주소
+   1. ✅ api Docker 이미지 (`output: "standalone"`, multi-stage, root가 아닌 사용자)
+   2. ✅ web Docker 이미지 (`NEXT_PUBLIC_API_URL`은 빌드할 때 코드에 박혀서 `--build-arg`로 받는다, `.next/static`과 `public`은 직접 복사)
+   3. ✅ 배포용 `compose.prod.yaml`로 web + api + mysql 함께 띄우기, 켤 때마다 마이그레이션 자동 실행(`migrate` 서비스), 앱 전용 DB 계정. 로컬에서 로그인까지 확인(Google Console에 `http://localhost:4001/...` 리디렉션 URI 추가), 개발 DB의 노트를 덤프 → 복원으로 옮기는 연습 (4-7에서 라이브로 옮긴다)
+   4. ✅ 쿠키 도메인(`COOKIE_DOMAIN`): `api.` 주소가 만든 세션 쿠키를 web 주소에서도 보이게 (로컬은 비워 둔다)
+   5. ✅ AWS 계정(**무료 플랜**: 6개월, 크레딧 최대 $200 안에서는 청구 자체가 안 됨. 6개월 뒤 유료 전환), MFA, 지출 한도. 체크카드면 카드사 앱에서 해외결제 한도도 낮게
+      - ✅ 가입 (2026-10-07, 무료 플랜 크레딧 $100, 2027-04-07까지)
+      - ✅ 상한선: 무료 플랜에는 지출 한도 설정이 없고 무료 플랜 자체가 상한선(청구 0원)이다. **2027-04-07 전에 유료로 바꿀 때 지출 한도(월 $30~40)를 건다.** 크레딧 사용량은 `settings.aws.com`의 "청구 → 프로젝트별 비용"에서 본다
+      - 서버는 자동으로 만들어진 프로젝트 "Touch Grass Later" 안에 만든다
+      - 계정이 AWS의 **새 간소화 버전**(프로젝트, 팀, AWS Builder ID 로그인)으로 만들어졌다. 루트 사용자 대신 Builder ID로 로그인하고, 설정은 `https://settings.aws.com`에서 한다. 이 버전에는 **지출 한도(spend limit)**가 있어 무료 플랜이 끝난 뒤에도 상한선으로 쓴다
+      - **"고급 기능 활성화"는 하지 않는다**: 유료 플랜이 필요하고, 지출 한도가 사라지며, 되돌릴 수 없다. EC2는 간소화 버전에서도 쓸 수 있다
+      - **리전은 시드니(`ap-southeast-2`)**: 간소화 버전은 가입 때 정해진 시드니만 쓸 수 있고, 서울(`ap-northeast-2`)은 고급 기능이 필요하다. 기능과 가격은 같고 한국에서 요청마다 약 0.15초 느리다 (에디터 입력은 영향 없음). 데이터가 호주에 저장되므로 개인정보 처리방침(4-11)에 국외 이전을 적는다. **유료로 바꿀 때(2027-04) 서울로 이사**를 검토한다 (새 EC2 + 덤프 → 복원 + DNS 변경)
+      - ✅ Builder ID MFA (인증 앱). 가입 직후 `profile.aws.amazon.com`, `settings.aws.com`이 `ERR-837 계정 문제`로 열리지 않음 → 계정 확인이 끝나기를 기다렸다가 다시 시도, 계속되면 AWS Support(무료)에 요청 ID와 함께 문의
+      - MFA를 켜기 전에는 EC2(과금 리소스)를 만들지 않는다
+   6. ✅ 도메인 `chagoknotes.com` 구입 (2026-10-07, Cloudflare, 1년, 자동 갱신. 만료 2027-10-07. 무료 플랜은 구매가 막힐 수 있어 AWS 밖에서 샀다). Cloudflare 계정도 2단계 인증. 서버 IP를 가리키는 DNS 연결은 4-8에서. DNS도 Cloudflare에서 관리한다 (Route 53 월 $0.5 불필요, 나중에 Cloudflare CDN으로 정적 파일을 한국 근처에서 보낼 수 있다)
+   7. EC2 만들기(보안 그룹, 고정 IP, Docker), 손으로 처음 배포
+   8. Caddy로 HTTPS, Google Console에 운영 리디렉션 URI 추가
+   9. GitHub Actions 자동 배포 (이미지 빌드 → GHCR → EC2)
+   10. DB 매일 백업 → S3
+   11. 개인정보 처리방침 페이지, Google 앱 게시(테스트 → 프로덕션)
 5. **이미지**: S3 업로드 (Presigned URL). 업로드 권한이 있는 사용자만, 한 장 5MB와 사람별 용량 제한. 툴바 이미지 버튼을 파일 선택 업로드로 바꾸고, 드래그/붙여넣기 업로드와 카드 썸네일 추가. 이미지 없이 먼저 배포해서 완성된 앱을 올려 두려고 배포 뒤로 미뤘다
 6. **품질**: 테스트(Vitest, Playwright), PR마다 CI 검사
 

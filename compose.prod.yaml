@@ -1,0 +1,109 @@
+# 배포용: web + api + mysql을 한 번에 띄운다. EC2에서도 이 파일을 쓴다.
+# 값은 .env.prod에서 읽는다 (.env.prod.example 참고). 명령 앞부분은 pnpm prod로 줄여 쓸 수 있다 (package.json):
+#   서버:      docker compose -f compose.prod.yaml --env-file .env.prod pull  (GHCR에서 이미지 받기)
+#              docker compose -f compose.prod.yaml --env-file .env.prod up -d --wait
+#   내 컴퓨터: pnpm prod up -d --build --wait  (이미지를 직접 빌드해서 켜기. 이름은 GHCR 주소지만 내 컴퓨터에만 있다)
+#   끄기:      docker compose -f compose.prod.yaml --env-file .env.prod down
+#
+# 이미지: GitHub Actions(.github/workflows/build-images.yml)가 main에 push될 때 빌드해서 GHCR에 올린다.
+# IMAGE_TAG를 커밋 해시로 주면 그 버전으로 되돌릴 수 있다 (기본값 latest)
+#
+# 개발용 compose.yaml과의 차이
+# - 프로젝트 이름(my-notes-prod)이 달라서 컨테이너와 DB 데이터(볼륨)가 개발용과 섞이지 않는다
+# - 컨테이너끼리는 서비스 이름으로 부른다 (mysql:3306, api:4000). 같은 Compose 안의 컨테이너는 같은 네트워크에 묶인다
+# - MySQL은 밖으로 열지 않는다 (ports 없음). api만 접속하면 되고, 인터넷에서 DB에 접속할 길을 만들지 않는다
+#
+# ${이름:?문구}: 값이 없으면 문구를 보여 주고 멈춘다 (빈 비밀번호로 켜지는 사고 방지)
+name: my-notes-prod
+
+services:
+  mysql:
+    image: mysql:8.4
+    restart: unless-stopped
+    environment:
+      MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD:?.env.prod에 MYSQL_ROOT_PASSWORD가 필요합니다}
+      MYSQL_DATABASE: ${MYSQL_DATABASE:?.env.prod에 MYSQL_DATABASE가 필요합니다}
+      # 앱 전용 계정. MySQL 이미지가 처음 시작할 때 만들고, MYSQL_DATABASE 하나에만 권한을 준다.
+      # api는 root 대신 이 계정으로 접속한다 (뚫려도 다른 DB나 MySQL 설정은 못 건드린다)
+      MYSQL_USER: ${MYSQL_USER:?.env.prod에 MYSQL_USER가 필요합니다}
+      MYSQL_PASSWORD: ${MYSQL_PASSWORD:?.env.prod에 MYSQL_PASSWORD가 필요합니다}
+      TZ: UTC
+    volumes:
+      - mysql-data:/var/lib/mysql
+    healthcheck:
+      test:
+        [
+          "CMD",
+          "mysqladmin",
+          "ping",
+          "-h",
+          "127.0.0.1",
+          "-p${MYSQL_ROOT_PASSWORD}",
+        ]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+  # DB 테이블 만들기(마이그레이션). 켤 때마다 한 번 실행하고 끝난다 (새 마이그레이션이 없으면 아무것도 안 하고 끝남)
+  migrate:
+    build:
+      context: .
+      dockerfile: apps/api/Dockerfile
+      # Dockerfile의 migrator 단계까지만 빌드한다 (Prisma CLI가 있는 이미지)
+      target: migrator
+    image: ghcr.io/eumjeongtae-oss/my-notes-api-migrate:${IMAGE_TAG:-latest}
+    # 끝나면 다시 켜지 않는다 (한 번 하고 끝나는 작업)
+    restart: "no"
+    depends_on:
+      mysql:
+        condition: service_healthy
+    environment:
+      DATABASE_URL: &database-url mysql://${MYSQL_USER}:${MYSQL_PASSWORD}@mysql:3306/${MYSQL_DATABASE}?allowPublicKeyRetrieval=true
+
+  api:
+    build:
+      context: .
+      dockerfile: apps/api/Dockerfile
+    image: ghcr.io/eumjeongtae-oss/my-notes-api:${IMAGE_TAG:-latest}
+    restart: unless-stopped
+    # 마이그레이션이 성공적으로 끝난 뒤에 켠다 (테이블이 없는 DB로 api가 뜨지 않게)
+    depends_on:
+      migrate:
+        condition: service_completed_successfully
+    environment:
+      # 호스트 자리의 mysql: 위의 mysql 서비스 (localhost나 host.docker.internal이 아니다)
+      # allowPublicKeyRetrieval: MySQL 8의 기본 로그인 방식(caching_sha2_password)은 암호화(TLS) 없이 처음 접속할 때
+      # 서버의 공개 키로 비밀번호를 감싸서 보낸다. 그 키를 받아 와도 된다는 허락이 없으면 접속이 계속 실패한다.
+      # (개발용 root는 healthcheck가 먼저 로그인해서 서버가 기억해 둔 덕에 이 과정 없이 통과했다)
+      # *database-url: 위 migrate의 &database-url 값을 그대로 가져다 쓴다 (YAML 앵커. 같은 주소를 두 번 쓰지 않게)
+      DATABASE_URL: *database-url
+      CORS_ORIGINS: ${WEB_URL:?.env.prod에 WEB_URL이 필요합니다}
+      WEB_URL: ${WEB_URL}
+      GOOGLE_CLIENT_ID: ${GOOGLE_CLIENT_ID:?.env.prod에 GOOGLE_CLIENT_ID가 필요합니다}
+      GOOGLE_CLIENT_SECRET: ${GOOGLE_CLIENT_SECRET:?.env.prod에 GOOGLE_CLIENT_SECRET이 필요합니다}
+      GOOGLE_REDIRECT_URI: ${API_URL:?.env.prod에 API_URL이 필요합니다}/api/auth/google/callback
+      ADMIN_EMAILS: ${ADMIN_EMAILS:-}
+      # 로그인 쿠키를 web과 api가 함께 쓸 도메인 (apps/api/src/lib/auth-cookies.ts). 로컬은 비워 둔다
+      COOKIE_DOMAIN: ${COOKIE_DOMAIN:-}
+    ports:
+      - "4001:4000"
+
+  web:
+    build:
+      context: .
+      dockerfile: apps/web/Dockerfile
+      args:
+        # 브라우저가 부를 api 주소. 빌드할 때 코드에 박힌다 (apps/web/Dockerfile 참고)
+        NEXT_PUBLIC_API_URL: ${API_URL}
+    image: ghcr.io/eumjeongtae-oss/my-notes-web:${IMAGE_TAG:-latest}
+    restart: unless-stopped
+    depends_on:
+      - api
+    environment:
+      # 서버 컴포넌트가 부를 api 주소. 같은 Compose 안이라 서비스 이름으로 바로 부른다 (브라우저용 주소와 다르다)
+      API_URL: http://api:4000
+    ports:
+      - "3001:3000"
+
+volumes:
+  mysql-data:
