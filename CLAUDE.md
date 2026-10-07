@@ -45,6 +45,7 @@ velog 형식의 화면으로 쓰는 개인 마크다운 노트 앱. 누구나 Go
   - `pnpm prod ps`, `pnpm prod logs api`, `pnpm prod down` (`down -v`는 배포 연습용 DB 데이터까지 삭제)
   - DB 보기: `pnpm prod exec mysql mysql -u my_notes_app -p my_notes` (MySQL은 밖으로 열지 않아서 컨테이너 안에서 본다)
 - 배포(서버): main에 push하면 GitHub Actions(`.github/workflows/build-images.yml`)가 api, api-migrate, web 이미지를 빌드해 GHCR에 올린다 (web에는 `NEXT_PUBLIC_API_URL=https://api.chagoknotes.com`이 박힌다). 서버(EC2 시드니, `ssh -i $HOME\.ssh\my-notes-key.pem ubuntu@<IP>`)의 `~/my-notes`에서 `git pull` → `docker compose -f compose.prod.yaml --env-file .env.prod pull` → `up -d --wait`. 서버는 빌드하지 않는다. 서버 `.env.prod`는 진짜 주소와 운영 DB 비밀번호 (내 컴퓨터 `backups/server.env.prod`, git 제외)
+- 운영 DB 보기: MySQL은 서버 `127.0.0.1:13306`에만 열려 있다 (인터넷 차단). DBeaver에서 SSH 터널(`ubuntu@<IP>`, `.pem`)을 켜고 `localhost:13306`, `my_notes_app`(비밀번호는 서버 `.env.prod`의 `MYSQL_PASSWORD`)으로 접속한다. 읽기 전용 연결로 쓴다. 서버 안에서 바로 보려면 `docker compose ... exec mysql sh -c 'mysql -umy_notes_app -p$MYSQL_PASSWORD my_notes'`
 - DB 옮기기(덤프 → 복원): 개발 컨테이너에서 `mysqldump --no-create-info`로 데이터만 `/tmp/dump.sql`에 뽑고(`sessions`, `_prisma_migrations`는 제외), `docker cp`로 꺼내 `backups/`(git 제외)에 두고, 대상 컨테이너에 넣어 `mysql < /tmp/dump.sql`. 대상 DB는 migrate만 끝난 빈 상태여야 한다 (로그인 전). PowerShell `>`는 한글을 깨뜨리므로 `--result-file`을 쓴다
 
 작업을 마치면 `typecheck`, `lint`, `format:check`, `build`를 통과시킨다.
