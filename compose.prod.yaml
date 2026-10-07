@@ -11,7 +11,7 @@
 # 개발용 compose.yaml과의 차이
 # - 프로젝트 이름(my-notes-prod)이 달라서 컨테이너와 DB 데이터(볼륨)가 개발용과 섞이지 않는다
 # - 컨테이너끼리는 서비스 이름으로 부른다 (mysql:3306, api:4000). 같은 Compose 안의 컨테이너는 같은 네트워크에 묶인다
-# - MySQL은 밖으로 열지 않는다 (ports 없음). api만 접속하면 되고, 인터넷에서 DB에 접속할 길을 만들지 않는다
+# - MySQL은 인터넷에 열지 않는다. 서버 자신(127.0.0.1:13306)에게만 열어서 SSH 터널로만 들어온다
 #
 # ${이름:?문구}: 값이 없으면 문구를 보여 주고 멈춘다 (빈 비밀번호로 켜지는 사고 방지)
 name: my-notes-prod
@@ -28,6 +28,11 @@ services:
       MYSQL_USER: ${MYSQL_USER:?.env.prod에 MYSQL_USER가 필요합니다}
       MYSQL_PASSWORD: ${MYSQL_PASSWORD:?.env.prod에 MYSQL_PASSWORD가 필요합니다}
       TZ: UTC
+    # 서버 자기 자신(127.0.0.1)에게만 연다. 인터넷에서는 여전히 접속할 수 없다 (보안 그룹에도 없음).
+    # 내 컴퓨터의 DB 프로그램(DBeaver)이 SSH 터널로 서버에 들어온 뒤 이 문으로 접속한다.
+    # 13306: 내 컴퓨터의 개발용 MySQL(3306)과 겹치지 않게 고른 번호
+    ports:
+      - "127.0.0.1:13306:3306"
     volumes:
       - mysql-data:/var/lib/mysql
     healthcheck:
