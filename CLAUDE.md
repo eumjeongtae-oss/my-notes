@@ -41,9 +41,10 @@ velog 형식의 화면으로 쓰는 개인 마크다운 노트 앱. 누구나 Go
 - `docker build -f apps/api/Dockerfile -t my-notes-api .`: api 배포용 이미지 만들기 (맨 끝 `.`: 저장소 루트가 빌드 재료). 실행은 `docker run -p 4001:4000 -e DATABASE_URL=... my-notes-api`. 컨테이너 안의 `localhost`는 컨테이너 자신이라 로컬 MySQL은 `host.docker.internal`로 부른다
 - `docker build -f apps/web/Dockerfile --build-arg NEXT_PUBLIC_API_URL=http://localhost:4001 -t my-notes-web .`: web 배포용 이미지. 실행은 `docker run -p 3001:3000 -e API_URL=http://host.docker.internal:4001 my-notes-web` (api 컨테이너를 먼저 켠다)
 - `pnpm prod ...`: 배포용 Compose(`docker compose -f compose.prod.yaml --env-file .env.prod`)의 줄임말. 뒤에 Compose 명령을 붙인다
-  - `pnpm prod up -d --build --wait`: 이미지를 만들고 mysql → migrate(테이블 만들기, 끝나면 꺼짐) → api → web 순서로 켠다 (web 3001, api 4001). 개발용과 프로젝트 이름(`my-notes-prod`)과 DB가 따로다
+  - `pnpm prod up -d --build --wait`: 이미지를 만들고 mysql → migrate(테이블 만들기, 끝나면 꺼짐) → api → web 순서로 켠다 (web 3001, api 4001). 개발용과 프로젝트 이름(`my-notes-prod`)과 DB가 따로다. 이미지 이름은 GHCR 주소(`ghcr.io/eumjeongtae-oss/my-notes-*`)지만 내 컴퓨터에서 빌드한 것이다
   - `pnpm prod ps`, `pnpm prod logs api`, `pnpm prod down` (`down -v`는 배포 연습용 DB 데이터까지 삭제)
   - DB 보기: `pnpm prod exec mysql mysql -u my_notes_app -p my_notes` (MySQL은 밖으로 열지 않아서 컨테이너 안에서 본다)
+- 배포(서버): main에 push하면 GitHub Actions(`.github/workflows/build-images.yml`)가 api, api-migrate, web 이미지를 빌드해 GHCR에 올린다 (web에는 `NEXT_PUBLIC_API_URL=https://api.chagoknotes.com`이 박힌다). 서버(EC2 시드니, `ssh -i $HOME\.ssh\my-notes-key.pem ubuntu@<IP>`)의 `~/my-notes`에서 `git pull` → `docker compose -f compose.prod.yaml --env-file .env.prod pull` → `up -d --wait`. 서버는 빌드하지 않는다. 서버 `.env.prod`는 진짜 주소와 운영 DB 비밀번호 (내 컴퓨터 `backups/server.env.prod`, git 제외)
 - DB 옮기기(덤프 → 복원): 개발 컨테이너에서 `mysqldump --no-create-info`로 데이터만 `/tmp/dump.sql`에 뽑고(`sessions`, `_prisma_migrations`는 제외), `docker cp`로 꺼내 `backups/`(git 제외)에 두고, 대상 컨테이너에 넣어 `mysql < /tmp/dump.sql`. 대상 DB는 migrate만 끝난 빈 상태여야 한다 (로그인 전). PowerShell `>`는 한글을 깨뜨리므로 `--result-file`을 쓴다
 
 작업을 마치면 `typecheck`, `lint`, `format:check`, `build`를 통과시킨다.
