@@ -94,7 +94,7 @@ apps/api  백엔드 Next.js (포트 4000)  REST API, Prisma, MySQL
       - **이미지는 서버에서 빌드하지 않는다**: main에 push하면 GitHub Actions(`.github/workflows/build-images.yml`)가 이미지 3개를 빌드해 GHCR에 올리고(4-9의 CI 부분을 당겨 옴), 서버는 `~/my-notes`(main)에서 `docker compose ... pull` → `up -d --wait`만 한다. 공개 레포라 이미지도 공개, 서버는 GHCR 로그인 없이 받는다
       - 서버 `.env.prod`는 진짜 주소(`https://chagoknotes.com`, `https://api.chagoknotes.com`, `COOKIE_DOMAIN=chagoknotes.com`)와 새 DB 비밀번호. 내 컴퓨터 `backups/server.env.prod`에서 `scp`로 보냈다
       - IP로 api health와 로그인 페이지까지 확인. 로그인은 도메인과 HTTPS가 있어야 된다
-   8. ✅ 고정 IP(탄력적 IP `3.105.99.81`), Cloudflare DNS 연결, Caddy로 HTTPS, Google Console에 운영 리디렉션 URI 추가, 3001/4001 규칙 지우기, 개발 DB 노트 옮기기
+   8. 고정 IP(✅ 탄력적 IP `3.105.99.81`), Cloudflare DNS 연결, Caddy로 HTTPS, Google Console에 운영 리디렉션 URI 추가, 3001/4001 규칙 지우기, 개발 DB 노트 옮기기
    9. 자동 배포(CD): main에 push → 이미지 빌드(✅ 4-7에서 함) → 서버가 자동으로 pull 후 다시 켜기
    10. DB 매일 백업 → S3
    11. 개인정보 처리방침 페이지, Google 앱 게시(테스트 → 프로덕션)
