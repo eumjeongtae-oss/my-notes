@@ -88,13 +88,13 @@ apps/api  백엔드 Next.js (포트 4000)  REST API, Prisma, MySQL
       - MFA를 켜기 전에는 EC2(과금 리소스)를 만들지 않는다
    6. ✅ 도메인 `chagoknotes.com` 구입 (2026-10-07, Cloudflare, 1년, 자동 갱신. 만료 2027-10-07. 무료 플랜은 구매가 막힐 수 있어 AWS 밖에서 샀다). Cloudflare 계정도 2단계 인증. 서버 IP를 가리키는 DNS 연결은 4-8에서. DNS도 Cloudflare에서 관리한다 (Route 53 월 $0.5 불필요, 나중에 Cloudflare CDN으로 정적 파일을 한국 근처에서 보낼 수 있다)
    7. ✅ EC2 만들고 처음 배포 (2026-10-07)
-      - 시드니, Ubuntu 24.04, t3.small, 디스크 20GB, Swap 2GB, Docker. 퍼블릭 IP `32.236.16.171` (껐다 켜면 바뀌므로 4-8에서 고정 IP로)
+      - 시드니, Ubuntu 24.04, t3.small, 디스크 20GB, Swap 2GB, Docker. 고정 IP(탄력적 IP) `3.105.99.81`
       - 보안 그룹 `my-notes-sg`: SSH(22)는 내 IP만, 80과 443은 모두, 3001과 4001은 확인용으로 내 IP만 (4-8에서 지운다). MySQL은 열지 않는다
       - 접속: `ssh -i $HOME\.ssh\my-notes-key.pem ubuntu@<IP>` (열쇠 파일은 레포 밖에 보관)
       - **이미지는 서버에서 빌드하지 않는다**: main에 push하면 GitHub Actions(`.github/workflows/build-images.yml`)가 이미지 3개를 빌드해 GHCR에 올리고(4-9의 CI 부분을 당겨 옴), 서버는 `~/my-notes`(main)에서 `docker compose ... pull` → `up -d --wait`만 한다. 공개 레포라 이미지도 공개, 서버는 GHCR 로그인 없이 받는다
       - 서버 `.env.prod`는 진짜 주소(`https://chagoknotes.com`, `https://api.chagoknotes.com`, `COOKIE_DOMAIN=chagoknotes.com`)와 새 DB 비밀번호. 내 컴퓨터 `backups/server.env.prod`에서 `scp`로 보냈다
       - IP로 api health와 로그인 페이지까지 확인. 로그인은 도메인과 HTTPS가 있어야 된다
-   8. 고정 IP(탄력적 IP), Cloudflare DNS 연결, Caddy로 HTTPS, Google Console에 운영 리디렉션 URI 추가, 3001/4001 규칙 지우기, 개발 DB 노트 옮기기
+   8. ✅ 고정 IP(탄력적 IP `3.105.99.81`), Cloudflare DNS 연결, Caddy로 HTTPS, Google Console에 운영 리디렉션 URI 추가, 3001/4001 규칙 지우기, 개발 DB 노트 옮기기
    9. 자동 배포(CD): main에 push → 이미지 빌드(✅ 4-7에서 함) → 서버가 자동으로 pull 후 다시 켜기
    10. DB 매일 백업 → S3
    11. 개인정보 처리방침 페이지, Google 앱 게시(테스트 → 프로덕션)
