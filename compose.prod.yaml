@@ -105,5 +105,28 @@ services:
     ports:
       - "3001:3000"
 
+  # 서버 맨 앞의 안내 데스크. 80, 443번 문에서 받아 주소에 따라 web, api로 보내고 HTTPS 인증서를 자동으로 받는다 (Caddyfile)
+  # profiles: server 프로필을 켰을 때만 뜬다. 서버의 .env.prod에 COMPOSE_PROFILES=server를 넣는다.
+  # 내 컴퓨터 연습(pnpm prod)에서는 진짜 도메인 인증서를 받을 수 없어서 켜지 않는다 (3001, 4001로 확인)
+  caddy:
+    image: caddy:2
+    profiles: [server]
+    restart: unless-stopped
+    depends_on:
+      - web
+      - api
+    ports:
+      - "80:80"
+      - "443:443"
+      # HTTP/3 (UDP로 하는 더 빠른 HTTPS)
+      - "443:443/udp"
+    volumes:
+      - ./Caddyfile:/etc/caddy/Caddyfile:ro
+      # 받아 둔 인증서 보관. 지우면 다시 받아야 하고, 너무 자주 받으면 Let's Encrypt가 잠시 막는다
+      - caddy-data:/data
+      - caddy-config:/config
+
 volumes:
   mysql-data:
+  caddy-data:
+  caddy-config:
