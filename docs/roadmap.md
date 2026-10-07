@@ -77,8 +77,8 @@ apps/api  백엔드 Next.js (포트 4000)  REST API, Prisma, MySQL
    2. ✅ web Docker 이미지 (`NEXT_PUBLIC_API_URL`은 빌드할 때 코드에 박혀서 `--build-arg`로 받는다, `.next/static`과 `public`은 직접 복사)
    3. ✅ 배포용 `compose.prod.yaml`로 web + api + mysql 함께 띄우기, 켤 때마다 마이그레이션 자동 실행(`migrate` 서비스), 앱 전용 DB 계정. 로컬에서 로그인까지 확인(Google Console에 `http://localhost:4001/...` 리디렉션 URI 추가), 개발 DB의 노트를 덤프 → 복원으로 옮기는 연습 (4-7에서 라이브로 옮긴다)
    4. ✅ 쿠키 도메인(`COOKIE_DOMAIN`): `api.` 주소가 만든 세션 쿠키를 web 주소에서도 보이게 (로컬은 비워 둔다)
-   5. AWS 계정, 루트 MFA, Budgets 알림
-   6. 도메인 구입, Route 53 연결
+   5. AWS 계정(**무료 플랜**: 6개월, 크레딧 최대 $200 안에서는 청구 자체가 안 됨. 6개월 뒤 유료 전환), 루트 MFA, Budgets 알림. 체크카드면 카드사 앱에서 해외결제 한도도 낮게
+   6. 도메인 `chagoknotes.com` 구입 (무료 플랜은 구매가 막힐 수 있어 AWS 밖, Cloudflare 등에서 연 $10 정도), DNS 연결
    7. EC2 만들기(보안 그룹, 고정 IP, Docker), 손으로 처음 배포
    8. Caddy로 HTTPS, Google Console에 운영 리디렉션 URI 추가
    9. GitHub Actions 자동 배포 (이미지 빌드 → GHCR → EC2)
