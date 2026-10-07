@@ -8,6 +8,10 @@ name: 이미지 빌드
 on:
   push:
     branches: [main]
+    # 문서만 바뀐 push는 이미지가 같으니 빌드하지 않는다
+    paths-ignore:
+      - "docs/**"
+      - "**/*.md"
   workflow_dispatch:
 
 # 이 작업이 쓸 수 있는 권한. 코드 읽기 + 이미지 보관소에 올리기만
