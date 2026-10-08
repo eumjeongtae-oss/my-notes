@@ -12,9 +12,12 @@ import { NextResponse, type NextRequest } from "next/server";
 // 백엔드가 심는 로그인 쿠키 이름 (apps/api의 SESSION_COOKIE와 같아야 한다)
 const SESSION_COOKIE = "session";
 
+// 로그인하지 않아도 열리는 주소. 개인정보 처리방침은 가입 전에 읽을 수 있어야 하고, Google 앱 심사도 그렇게 요구한다
+const PUBLIC_PATHS = ["/login", "/privacy"];
+
 export function proxy(request: NextRequest) {
   if (
-    request.nextUrl.pathname !== "/login" &&
+    !PUBLIC_PATHS.includes(request.nextUrl.pathname) &&
     !request.cookies.has(SESSION_COOKIE)
   ) {
     return NextResponse.redirect(new URL("/login", request.url));
