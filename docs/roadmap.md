@@ -69,7 +69,7 @@ apps/api  백엔드 Next.js (포트 4000)  REST API, Prisma, MySQL
    3. ✅ 로그인/콜백/로그아웃/내 정보 API. `ADMIN_EMAILS`의 이메일은 처음 가입할 때 이미지 권한을 켠다
    4. ✅ 노트와 묶음에 주인(`userId`) 추가 (기존 노트는 첫 사용자에게 옮기는 데이터 마이그레이션, 묶음 이름은 사람마다 하나), 모든 노트, 묶음 API를 로그인한 사람의 것만 다루게 보호 (남의 노트 id는 404)
    5. ✅ web: 쿠키 전달 (브라우저 요청, 서버 컴포넌트), 로그인 페이지, 헤더의 프로필 메뉴와 로그아웃
-4. **배포**: 프론트와 백엔드를 각각 Docker 이미지로, EC2, 배포용 DB, GitHub Actions, 도메인과 HTTPS. AWS Budgets 알림, 개인정보 처리방침 페이지, Google 앱 게시(테스트 → 프로덕션)
+4. ✅ **배포** (2026-10-08, `https://chagoknotes.com` 운영 중): 프론트와 백엔드를 각각 Docker 이미지로, EC2, 배포용 DB, GitHub Actions, 도메인과 HTTPS, 자동 배포, DB 백업, 개인정보 처리방침. Google 앱 공개는 보류
    - 구성: EC2 한 대(t3.small)에 Docker Compose로 Caddy(HTTPS 자동) + web + api + mysql. 주소는 `chagoknotes.com`(web), `api.chagoknotes.com`(api). `chagok.app` 등 짧은 이름은 이미 주인이 있었다
    - DB는 RDS(월 $20 이상) 대신 EC2 안의 MySQL 컨테이너. 대신 매일 백업을 S3로. 예상 비용 월 약 $25 + 도메인
    - GitHub 레포: https://github.com/eumjeongtae-oss/my-notes (공개). 커밋 이메일은 GitHub noreply 주소
@@ -103,7 +103,8 @@ apps/api  백엔드 Next.js (포트 4000)  REST API, Prisma, MySQL
    - S3 버킷 `chagoknotes-db-backup`(시드니, 퍼블릭 차단, 30일 지나면 자동 삭제). 서버에는 IAM 역할 `my-notes-ec2-role`(정책 `my-notes-backup-s3`: 이 버킷에 넣기, 꺼내기, 목록 보기만. 지우기 없음)을 달아 비밀 키 없이 올린다
    - `deploy/backup-db.sh`: `mysqldump --single-transaction`(테이블 구조 + 데이터 전체) → gzip → `s3://chagoknotes-db-backup/daily/`. AWS CLI는 Docker 이미지로 실행. systemd timer `my-notes-backup.timer`가 매일 03:00(한국 시간)
    - `deploy/restore-test.sh`: 최근 백업을 연습용 MySQL에 넣어 운영과 개수 비교 → 첫 연습 성공 (사용자 2, 노트 21, 묶음 5). 한 달에 한 번쯤 돌린다
-   11. 개인정보 처리방침 페이지, Google 앱 게시(테스트 → 프로덕션)
+   11. ✅ 개인정보 처리방침 페이지 `https://chagoknotes.com/privacy` (로그인 없이 열림, 책임자 음정태, AWS 시드니 국외 이전, 백업 30일). 자동 배포로 처음 올린 화면 변경
+   - **Google 앱 게시(테스트 → 프로덕션)는 보류**: 지금은 Google Console "대상"의 테스트 사용자(최대 100명)만 로그인할 수 있다. 친구를 받으려면 그 이메일을 테스트 사용자에 추가한다. 누구나 가입하게 하려면 "대상 → 앱 게시" (브랜딩에 처리방침 주소, 로고는 비워 두면 심사 없이 공개)
 5. **이미지**: S3 업로드 (Presigned URL). 업로드 권한이 있는 사용자만, 한 장 5MB와 사람별 용량 제한. 툴바 이미지 버튼을 파일 선택 업로드로 바꾸고, 드래그/붙여넣기 업로드와 카드 썸네일 추가. 이미지 없이 먼저 배포해서 완성된 앱을 올려 두려고 배포 뒤로 미뤘다
 6. **품질**: 테스트(Vitest, Playwright), PR마다 CI 검사
 
