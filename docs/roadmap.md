@@ -95,7 +95,10 @@ apps/api  백엔드 Next.js (포트 4000)  REST API, Prisma, MySQL
       - 서버 `.env.prod`는 진짜 주소(`https://chagoknotes.com`, `https://api.chagoknotes.com`, `COOKIE_DOMAIN=chagoknotes.com`)와 새 DB 비밀번호. 내 컴퓨터 `backups/server.env.prod`에서 `scp`로 보냈다
       - IP로 api health와 로그인 페이지까지 확인. 로그인은 도메인과 HTTPS가 있어야 된다
    8. ✅ (2026-10-08 완료) 고정 IP(탄력적 IP `3.105.99.81`), ✅ Cloudflare DNS(`@`, `api` A 레코드, 프록시 끔), ✅ Caddy로 HTTPS(`Caddyfile`, 서버 `.env.prod`에 `COMPOSE_PROFILES=server`), ✅ Google Console에 `https://api.chagoknotes.com/api/auth/google/callback` 추가 → 운영 로그인 확인, ✅ 개발 DB 노트 옮기기(운영 `users` 비우고 덤프 복원. 서버에서는 `down -v` 금지: Caddy 인증서 볼륨까지 지워짐), ✅ 운영 DB를 DBeaver로 보기(MySQL을 서버 `127.0.0.1:13306`에만 열고 DBeaver의 SSH 터널로 접속, 읽기 전용 연결), ✅ 확인용 3001/4001 규칙 삭제. 운영 DB의 `[샘플]` 노트 98개 삭제 (옮긴 118개가 모두 seed 데이터였다. 학습 노트 20개와 묶음 5개는 남김)
-   9. 자동 배포(CD): main에 push → 이미지 빌드(✅ 4-7에서 함) → 서버가 자동으로 pull 후 다시 켜기
+   9. ✅ 자동 배포(CD, 2026-10-08): main에 push → 이미지 빌드(4-7에서 함) → 서버가 2분마다 확인해서 바뀐 게 있으면 받아서 다시 켜기
+      - **pull 방식**: GitHub Actions가 서버에 SSH로 들어오는 push 방식은 SSH(22)를 내 IP에만 열어 둬서 막힌다. 서버가 GitHub과 GHCR로 확인하러 나가기만 하니 새로 여는 문이 없다 (Argo CD, Flux와 같은 방식을 작게)
+      - `deploy/auto-deploy.sh`(설정 파일 `git pull` → 이미지 `pull` → 이미지 ID나 `compose.prod.yaml`, `Caddyfile`이 바뀌었을 때만 `up`, Caddyfile이 바뀌면 `caddy reload`, 예전 이미지 정리)를 systemd timer(`my-notes-deploy.timer`, 2분)가 실행한다. 한 번 도는 데 약 9초, 메모리 70MB
+      - 반영까지: 빌드 5분 안팎 + 최대 2분. 배포 기록은 서버에서 `journalctl -u my-notes-deploy`
    10. DB 매일 백업 → S3
    11. 개인정보 처리방침 페이지, Google 앱 게시(테스트 → 프로덕션)
 5. **이미지**: S3 업로드 (Presigned URL). 업로드 권한이 있는 사용자만, 한 장 5MB와 사람별 용량 제한. 툴바 이미지 버튼을 파일 선택 업로드로 바꾸고, 드래그/붙여넣기 업로드와 카드 썸네일 추가. 이미지 없이 먼저 배포해서 완성된 앱을 올려 두려고 배포 뒤로 미뤘다
