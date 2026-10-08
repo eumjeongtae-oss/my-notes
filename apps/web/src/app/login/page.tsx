@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import Link from "next/link";
 import { redirect } from "next/navigation";
 
 import { getCurrentUser } from "@/api/auth";
@@ -53,6 +54,13 @@ export default async function LoginPage({ searchParams }: PageProps<"/login">) {
       )}
 
       <p className="mt-6 text-sm text-zinc-400">처음이면 자동으로 가입돼요</p>
+
+      <Link
+        href="/privacy"
+        className="mt-10 text-xs text-zinc-400 underline underline-offset-2 hover:text-zinc-600"
+      >
+        개인정보 처리방침
+      </Link>
     </main>
   );
 }
