@@ -10,7 +10,7 @@ import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { ArrowLeft, LoaderCircle } from "lucide-react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { useRef, useState } from "react";
+import { useMemo, useRef, useState } from "react";
 import { toast } from "sonner";
 
 import { createNote, updateNote } from "@/api/browser";
@@ -23,7 +23,7 @@ import { SeriesSelect } from "./series-select";
 import { useImageUpload } from "./use-image-upload";
 
 // 컴포넌트 밖에 두어서 렌더링마다 새로 만들지 않는다.
-const extensions = [
+const baseExtensions = [
   // codeLanguages: 코드 블록 안의 언어(tsx, css 등)도 문법 강조한다.
   markdown({ base: markdownLanguage, codeLanguages: languages }),
   EditorView.lineWrapping,
@@ -67,7 +67,12 @@ export function NoteEditor({
   const editorRef = useRef<ReactCodeMirrorRef>(null);
   const router = useRouter();
   // 이미지 올리기 (툴바 버튼). 올리는 중에는 저장을 막는다: "(이미지 올리는 중…)" 글자가 노트에 저장되지 않게
-  const imageUpload = useImageUpload(() => editorRef.current?.view);
+  const imageUpload = useImageUpload();
+  // 기본 확장 + 이미지 끌어다 놓기, 붙여넣기. useMemo: 렌더링마다 새 배열을 만들면 에디터가 확장을 매번 다시 설정한다
+  const extensions = useMemo(
+    () => [...baseExtensions, imageUpload.dropAndPaste],
+    [imageUpload.dropAndPaste],
+  );
 
   // useMutation: 데이터를 "바꾸는" 요청(POST, PATCH, DELETE)에 쓴다.
   // 저장 중(isPending), 실패(error), 성공 후 할 일(onSuccess)을 대신 관리해 준다.
@@ -106,7 +111,10 @@ export function NoteEditor({
           <hr className="my-6 w-16 rounded-full border-t-[6px] border-zinc-700" />
           <EditorToolbar
             getView={() => editorRef.current?.view}
-            onImageFiles={imageUpload.upload}
+            onImageFiles={(files) => {
+              const view = editorRef.current?.view;
+              if (view) imageUpload.upload(view, files);
+            }}
           />
           {/* 이미지 올리기 실패 문구 (예: "이미지는 한 장에 5MB까지 올릴 수 있습니다.") */}
           {imageUpload.error && (

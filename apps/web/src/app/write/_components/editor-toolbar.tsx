@@ -25,6 +25,7 @@ import {
   toggleQuote,
   wrapSelection,
 } from "./editor-commands";
+import { IMAGE_TYPES } from "./use-image-upload";
 
 // run이 "pickImage"면 에디터 명령 대신 파일 선택 창을 연다
 type ToolbarItem = {
@@ -33,8 +34,8 @@ type ToolbarItem = {
   run: ((view: EditorView) => void) | "pickImage";
 };
 
-// 올릴 수 있는 이미지 종류 (백엔드 apps/api/src/server/images/schema.ts와 같게). 파일 선택 창에 이것만 보인다
-const IMAGE_ACCEPT = "image/png,image/jpeg,image/gif,image/webp";
+// 파일 선택 창에 올릴 수 있는 이미지 종류만 보이게 한다
+const IMAGE_ACCEPT = IMAGE_TYPES.join(",");
 
 // 배열의 배열: 안쪽 배열 하나가 구분선으로 나뉘는 버튼 묶음 하나다.
 const groups: ToolbarItem[][] = [
