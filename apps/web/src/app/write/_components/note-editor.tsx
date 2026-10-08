@@ -20,6 +20,7 @@ import { MarkdownPreview } from "@/components/markdown-preview";
 
 import { EditorToolbar } from "./editor-toolbar";
 import { SeriesSelect } from "./series-select";
+import { useImageUpload } from "./use-image-upload";
 
 // 컴포넌트 밖에 두어서 렌더링마다 새로 만들지 않는다.
 const extensions = [
@@ -65,6 +66,8 @@ export function NoteEditor({
   // 툴바가 에디터를 조작할 수 있도록 CodeMirror 인스턴스를 ref로 잡아둔다.
   const editorRef = useRef<ReactCodeMirrorRef>(null);
   const router = useRouter();
+  // 이미지 올리기 (툴바 버튼). 올리는 중에는 저장을 막는다: "(이미지 올리는 중…)" 글자가 노트에 저장되지 않게
+  const imageUpload = useImageUpload(() => editorRef.current?.view);
 
   // useMutation: 데이터를 "바꾸는" 요청(POST, PATCH, DELETE)에 쓴다.
   // 저장 중(isPending), 실패(error), 성공 후 할 일(onSuccess)을 대신 관리해 준다.
@@ -101,7 +104,16 @@ export function NoteEditor({
             className="text-4xl font-bold outline-none placeholder:text-zinc-300"
           />
           <hr className="my-6 w-16 rounded-full border-t-[6px] border-zinc-700" />
-          <EditorToolbar getView={() => editorRef.current?.view} />
+          <EditorToolbar
+            getView={() => editorRef.current?.view}
+            onImageFiles={imageUpload.upload}
+          />
+          {/* 이미지 올리기 실패 문구 (예: "이미지는 한 장에 5MB까지 올릴 수 있습니다.") */}
+          {imageUpload.error && (
+            <p role="alert" className="-mt-2 mb-4 text-sm text-red-500">
+              {imageUpload.error}
+            </p>
+          )}
           <CodeMirror
             ref={editorRef}
             value={content}
@@ -146,10 +158,10 @@ export function NoteEditor({
               onClick={() =>
                 saveMutation.mutate({ title, content, seriesName })
               }
-              // 저장 중에는 두 번 누르지 못하게 막는다
-              disabled={saveMutation.isPending}
+              // 저장 중에는 두 번 누르지 못하게, 이미지를 올리는 중에는 아직 저장하지 못하게 막는다
+              disabled={saveMutation.isPending || imageUpload.isUploading}
               // aria-busy: 스크린리더에 "처리 중"이라고 알려준다
-              aria-busy={saveMutation.isPending}
+              aria-busy={saveMutation.isPending || imageUpload.isUploading}
               // w-36: 글자가 "저장" → "저장 중…"으로 바뀌어도 버튼 폭이 그대로라 옆의 에러 메시지가 들썩이지 않는다
               className="inline-flex w-36 items-center justify-center gap-2 rounded-md bg-emerald-500 py-2 text-lg font-bold text-white hover:bg-emerald-400 disabled:cursor-not-allowed disabled:opacity-50"
             >
@@ -158,6 +170,11 @@ export function NoteEditor({
                   {/* animate-spin: Tailwind의 계속 회전하는 애니메이션 */}
                   <LoaderCircle className="size-5 animate-spin" />
                   저장 중…
+                </>
+              ) : imageUpload.isUploading ? (
+                <>
+                  <LoaderCircle className="size-5 animate-spin" />
+                  사진 올리는 중
                 </>
               ) : (
                 "저장"
