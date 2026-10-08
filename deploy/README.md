@@ -31,3 +31,32 @@ sudo systemctl start my-notes-deploy          # 기다리지 않고 지금 한 �
 ```sh
 sudo systemctl disable --now my-notes-deploy.timer
 ```
+
+# DB 백업 (매일 새벽 3시 → S3)
+
+| 파일                      | 역할                                                                                  |
+| ------------------------- | ------------------------------------------------------------------------------------- |
+| `backup-db.sh`            | `mysqldump`(테이블 구조 + 데이터) → 압축 → S3 `chagoknotes-db-backup/daily/`에 올리기 |
+| `my-notes-backup.service` | 위 스크립트를 한 번 실행하는 작업                                                     |
+| `my-notes-backup.timer`   | 매일 03:00(한국 시간)에 실행. 서버가 꺼져 있었으면 켜질 때 바로                       |
+
+- S3 권한은 서버의 IAM 역할 `my-notes-ec2-role`(정책 `my-notes-backup-s3`: 이 버킷에 넣기, 꺼내기, 목록 보기만. 지우기 없음)에서 온다
+- 30일 지난 백업은 S3 수명 주기 규칙(`delete-after-30-days`)이 지운다
+
+## 설치 (한 번만)
+
+```sh
+cd ~/my-notes
+git pull
+sudo cp deploy/my-notes-backup.service deploy/my-notes-backup.timer /etc/systemd/system/
+sudo systemctl daemon-reload
+sudo systemctl enable --now my-notes-backup.timer
+```
+
+## 확인
+
+```sh
+sudo systemctl start my-notes-backup                 # 지금 한 번 백업
+journalctl -u my-notes-backup -n 20 --no-pager       # "백업 완료: s3://..." 가 보이면 성공
+systemctl list-timers my-notes-backup.timer          # 다음 백업 시각
+```

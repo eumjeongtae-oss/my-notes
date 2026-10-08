@@ -1,0 +1,11 @@
+# 운영 DB 백업 작업 하나 (backup-db.sh를 한 번 실행하고 끝난다).
+# 언제 실행할지는 my-notes-backup.timer가 정한다. 설치 방법은 deploy/README.md
+[Unit]
+Description=my-notes DB 백업 (mysqldump → S3)
+After=docker.service network-online.target
+Wants=network-online.target
+
+[Service]
+Type=oneshot
+User=ubuntu
+ExecStart=/home/ubuntu/my-notes/deploy/backup-db.sh
