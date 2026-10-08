@@ -116,6 +116,10 @@ apps/api  백엔드 Next.js (포트 4000)  REST API, Prisma, MySQL
    7. ~~홈 목록 썸네일~~: 하지 않기로 함
    8. ✅ 배포: 운영 api에 `S3_IMAGES_BUCKET=chagoknotes-images`, `AWS_REGION` (열쇠 없이 EC2 IAM 역할. 컨테이너가 역할을 받으려면 EC2 메타데이터 홉 제한 2, 이미 2였음). push만으로 자동 배포, 운영 DB에 `images` 테이블은 migrate가 만듦
 6. **품질**: 테스트(Vitest, Playwright), PR마다 CI 검사
+   1. ✅ CI(`.github/workflows/ci.yml`, 2026-10-08): PR과 main push마다 깨끗한 환경에서 설치 → format → lint → typecheck → build. 첫 PR(#1)을 GitHub에서 만들고 ✅ 확인 후 Merge
+   2. 단위 테스트 (Vitest)
+   3. 테스트를 CI에 추가
+   4. E2E 테스트 (Playwright)
 
 ## 작업 규칙
 

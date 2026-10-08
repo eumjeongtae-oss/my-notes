@@ -49,7 +49,7 @@ velog 형식의 화면으로 쓰는 개인 마크다운 노트 앱. 누구나 Go
 - 운영 DB 백업: 매일 03:00(한국 시간) `deploy/backup-db.sh`가 전체 덤프를 S3 `chagoknotes-db-backup/daily/`에 올린다 (30일 보관, 서버 IAM 역할로 권한). 되살리기 연습은 서버에서 `~/my-notes/deploy/restore-test.sh`. 자세한 내용은 `deploy/README.md`
 - DB 옮기기(덤프 → 복원): 개발 컨테이너에서 `mysqldump --no-create-info`로 데이터만 `/tmp/dump.sql`에 뽑고(`sessions`, `_prisma_migrations`는 제외), `docker cp`로 꺼내 `backups/`(git 제외)에 두고, 대상 컨테이너에 넣어 `mysql < /tmp/dump.sql`. 대상 DB는 migrate만 끝난 빈 상태여야 한다 (로그인 전). PowerShell `>`는 한글을 깨뜨리므로 `--result-file`을 쓴다
 
-작업을 마치면 `typecheck`, `lint`, `format:check`, `build`를 통과시킨다.
+작업을 마치면 `typecheck`, `lint`, `format:check`, `build`를 통과시킨다. GitHub에서도 PR과 main push마다 CI(`.github/workflows/ci.yml`)가 같은 검사를 한다
 
 ## 환경 변수
 
@@ -142,7 +142,7 @@ velog 형식의 화면으로 쓰는 개인 마크다운 노트 앱. 누구나 Go
 - import 순서: 외부 패키지 → `@/` → `./`, 그룹 사이에 빈 줄
 - 노트의 정렬과 화면에 보이는 날짜는 **작성 시각(`createdAt`)** 기준이다. 수정해도 순서가 바뀌지 않는다 (`updatedAt`은 기록용으로만 둔다)
 - 날짜 표시는 `src/lib/format.ts`의 `formatDate`를 쓴다. `Intl.DateTimeFormat`을 직접 만들지 않는다 (서버 시간대가 UTC라 `timeZone: "Asia/Seoul"` 지정이 필요)
-- 브랜치는 `feat/...`, `fix/...`, `chore/...`로 따고 `main`에 합친다
+- 브랜치는 `feat/...`, `fix/...`, `chore/...`로 따고 `main`에 합친다. main은 곧바로 운영에 자동 배포되므로, GitHub에 브랜치를 올려 PR을 만들고 CI가 ✅일 때 Merge하는 것을 기본으로 한다
 - 커밋 메시지는 Conventional Commits 형식으로 쓰고 내용은 한국어로 쓴다 (예: `feat: 노트 목록 사이드바 추가`)
 
 ## 문서 동기화
