@@ -60,3 +60,13 @@ sudo systemctl start my-notes-backup                 # 지금 한 번 백업
 journalctl -u my-notes-backup -n 20 --no-pager       # "백업 완료: s3://..." 가 보이면 성공
 systemctl list-timers my-notes-backup.timer          # 다음 백업 시각
 ```
+
+## 되살리기 연습 (한 달에 한 번쯤)
+
+S3의 가장 최근 백업을 **연습용 MySQL**에 넣어 보고 운영 DB와 사용자, 노트, 묶음 개수를 비교한다. 운영 DB는 조회만 하고, 연습용 MySQL과 내려받은 파일은 끝나면 지운다.
+
+```sh
+~/my-notes/deploy/restore-test.sh
+```
+
+진짜로 운영을 되살려야 할 때(서버가 사라졌을 때)는 새 서버에서 MySQL만 먼저 켜고(`up -d mysql`), 백업을 `gunzip -c 파일 | docker compose ... exec -T mysql mysql -umy_notes_app -p... my_notes`로 넣은 뒤 나머지를 켠다. 백업에 테이블 구조와 마이그레이션 기록이 모두 들어 있다.
