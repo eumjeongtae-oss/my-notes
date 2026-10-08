@@ -99,7 +99,10 @@ apps/api  백엔드 Next.js (포트 4000)  REST API, Prisma, MySQL
       - **pull 방식**: GitHub Actions가 서버에 SSH로 들어오는 push 방식은 SSH(22)를 내 IP에만 열어 둬서 막힌다. 서버가 GitHub과 GHCR로 확인하러 나가기만 하니 새로 여는 문이 없다 (Argo CD, Flux와 같은 방식을 작게)
       - `deploy/auto-deploy.sh`(설정 파일 `git pull` → 이미지 `pull` → 이미지 ID나 `compose.prod.yaml`, `Caddyfile`이 바뀌었을 때만 `up`, Caddyfile이 바뀌면 `caddy reload`, 예전 이미지 정리)를 systemd timer(`my-notes-deploy.timer`, 2분)가 실행한다. 한 번 도는 데 약 9초, 메모리 70MB
       - 반영까지: 빌드 5분 안팎 + 최대 2분. 배포 기록은 서버에서 `journalctl -u my-notes-deploy`
-   10. DB 매일 백업 → S3
+   10. ✅ DB 매일 백업 → S3 (2026-10-08)
+   - S3 버킷 `chagoknotes-db-backup`(시드니, 퍼블릭 차단, 30일 지나면 자동 삭제). 서버에는 IAM 역할 `my-notes-ec2-role`(정책 `my-notes-backup-s3`: 이 버킷에 넣기, 꺼내기, 목록 보기만. 지우기 없음)을 달아 비밀 키 없이 올린다
+   - `deploy/backup-db.sh`: `mysqldump --single-transaction`(테이블 구조 + 데이터 전체) → gzip → `s3://chagoknotes-db-backup/daily/`. AWS CLI는 Docker 이미지로 실행. systemd timer `my-notes-backup.timer`가 매일 03:00(한국 시간)
+   - `deploy/restore-test.sh`: 최근 백업을 연습용 MySQL에 넣어 운영과 개수 비교 → 첫 연습 성공 (사용자 2, 노트 21, 묶음 5). 한 달에 한 번쯤 돌린다
    11. 개인정보 처리방침 페이지, Google 앱 게시(테스트 → 프로덕션)
 5. **이미지**: S3 업로드 (Presigned URL). 업로드 권한이 있는 사용자만, 한 장 5MB와 사람별 용량 제한. 툴바 이미지 버튼을 파일 선택 업로드로 바꾸고, 드래그/붙여넣기 업로드와 카드 썸네일 추가. 이미지 없이 먼저 배포해서 완성된 앱을 올려 두려고 배포 뒤로 미뤘다
 6. **품질**: 테스트(Vitest, Playwright), PR마다 CI 검사
