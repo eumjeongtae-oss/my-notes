@@ -109,10 +109,10 @@ apps/api  백엔드 Next.js (포트 4000)  REST API, Prisma, MySQL
    - 결정: **이미지는 비공개**(노트처럼 올린 본인만 본다. 보는 주소 `/api/images/:id`에서 api가 주인을 확인하고 S3의 잠깐 열리는 주소로 보낸다). **로그인한 사람은 누구나 업로드**(`canUploadImages` 권한 확인은 하지 않기로. 한 장 5MB, 사람별 100MB면 최악에도 S3 월 $0.25 수준). 업로드는 브라우저가 S3로 바로 보낸다(Presigned URL)
    1. ✅ DB `images` 테이블 (주인, S3 위치, 파일 종류, 크기)
    2. ✅ S3 버킷 `chagoknotes-images`(운영), `chagoknotes-images-dev`(개발). 둘 다 퍼블릭 차단, CORS로 각 사이트의 POST만 허락. 운영은 서버 IAM 역할에 정책 `my-notes-images-s3`, 개발은 IAM 사용자 `my-notes-dev`(정책 `my-notes-images-dev-s3`, 개발 버킷만)의 액세스 키를 `apps/api/.env`에
-   3. api: 업로드 허락 API (권한, 5MB, 100MB 확인 → 업로드 주소 발급)
-   4. api: 이미지 보기 API (주인 확인)
-   5. web: 툴바 이미지 버튼 → 파일 선택 업로드
-   6. web: 드래그, 붙여넣기 업로드
+   3. ✅ api `POST /api/images`: 종류(png, jpg, gif, webp. svg는 스크립트를 숨길 수 있어 뺌), 5MB, 100MB 확인 → DB 기록 → S3 Presigned POST(조건에 크기와 종류를 넣어 S3가 직접 거절, 5분)
+   4. ✅ api `GET /api/images/:id`: 주인 확인 → S3의 5분짜리 서명 주소로 302 (브라우저가 4분 기억). 남의 이미지는 404
+   5. ✅ web: 툴바 이미지 버튼 → 파일 선택 업로드. "(이미지 올리는 중…)"을 넣었다가 `![설명](api 주소)`로 바꾸고, 올리는 중에는 저장을 막는다
+   6. ✅ web: 드래그 앤 드롭, 붙여넣기(Ctrl+V). 세 방법 모두 `useImageUpload`의 `upload(view, files)` 하나로 모인다
    7. 홈 목록 썸네일 (본문의 첫 이미지)
    8. 배포
 6. **품질**: 테스트(Vitest, Playwright), PR마다 CI 검사
