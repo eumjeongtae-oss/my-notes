@@ -86,7 +86,8 @@ velog 형식의 화면으로 쓰는 개인 마크다운 노트 앱. 누구나 Go
   - `auth.ts`: `getCurrentUser()` (`GET /api/auth/me`, 로그인 안 했으면 `null`. 401이어도 `/login`으로 보내지 않는다)
   - `server.ts`, `notes.ts`, `series.ts`, `auth.ts`는 `server-only`(서버 컴포넌트 전용)
   - `types.ts`: 응답 타입과 날짜 변환 (서버용, 브라우저용 공용)
-  - `browser.ts`: 브라우저(클라이언트 컴포넌트)에서 부르는 함수. `NEXT_PUBLIC_API_URL` 사용. 다른 출처(3000 → 4000)라서 `credentials: "include"`로 쿠키를 붙인다 (api의 `proxy.ts`가 `Access-Control-Allow-Credentials: true`로 허락)
+  - `browser.ts`: 브라우저(클라이언트 컴포넌트)에서 부르는 함수. `NEXT_PUBLIC_API_URL` 사용. 다른 출처(3000 → 4000)라서 `credentials: "include"`로 쿠키를 붙인다 (api의 `proxy.ts`가 `Access-Control-Allow-Credentials: true`로 허락). `uploadImage(file)`은 api에 허락받고 S3로 바로 보낸 뒤 본문에 넣을 이미지 주소를 돌려준다
+- `src/app/write/_components/use-image-upload.ts`: 에디터 이미지 올리기. 툴바 버튼(파일 선택), 끌어다 놓기, 붙여넣기(Ctrl+V)가 모두 `upload(view, files)`로 모인다. "(이미지 올리는 중…)"을 넣었다가 `![설명](주소)`로 바꾸고, 실패는 툴바 아래 빨간 글씨. 올리는 중에는 저장 버튼을 막는다. 받는 종류(`IMAGE_TYPES`)는 api의 `images/schema.ts`와 맞춘다
   - `query-keys.ts`: React Query 이름표(query key). 문자열을 직접 쓰지 않고 `noteKeys`를 쓴다
   - **노트를 저장, 수정, 삭제한 뒤에는 `queryClient.removeQueries({ queryKey: noteKeys.lists() })`로 홈 목록 기억을 지운다.** 안 지우면 홈에 예전 목록이 보인다
 - `src/lib/`: 서버와 브라우저 어디서나 쓰는 순수 함수 (`format.ts`: 날짜 표시, `note-list-params.ts`: 홈 검색어와 정렬 URL 해석)
@@ -107,7 +108,7 @@ velog 형식의 화면으로 쓰는 개인 마크다운 노트 앱. 누구나 Go
   - 요청 본문은 `parseBody(request, 스키마)`(`src/lib/parse-body.ts`)로 읽고 검사한다. URL의 id도 zod 스키마(`noteIdSchema`)로 검사한다
   - 검색(`q`)은 제목과 본문의 LIKE 검색이다. `%`, `_`는 LIKE의 특수 기호라 `escapeLike`로 이스케이프한다 (안 하면 "%" 검색에 모든 노트가 나옴)
   - 목록은 커서 페이지네이션이다: `?limit=20&cursor=...` → `{ items, nextCursor }`. 커서는 마지막 노트의 `createdAt`과 `id`를 base64url로 묶은 불투명한 문자열 (`server/notes/cursor.ts`)
-  - 현재 API: `GET /api/health`, `GET /api/notes?q=&sort=latest|oldest&limit=&cursor=`, `POST /api/notes`, `GET /api/notes/:id`, `PATCH /api/notes/:id`, `DELETE /api/notes/:id`, `GET /api/series`, `GET /api/series/:id`, `GET /api/auth/google`(로그인 시작), `GET /api/auth/google/callback`, `GET /api/auth/me`, `POST /api/auth/logout`
+  - 현재 API: `GET /api/health`, `GET /api/notes?q=&sort=latest|oldest&limit=&cursor=`, `POST /api/notes`, `GET /api/notes/:id`, `PATCH /api/notes/:id`, `DELETE /api/notes/:id`, `GET /api/series`, `GET /api/series/:id`, `GET /api/auth/google`(로그인 시작), `GET /api/auth/google/callback`, `GET /api/auth/me`, `POST /api/auth/logout`, `POST /api/images`(업로드 허락), `GET /api/images/:id`(이미지 보기)
 - `requests.http`: API를 직접 호출해 보는 파일 (VS Code REST Client). API를 추가하면 여기에도 예시 요청을 추가한다
 - `prisma/schema.prisma`: DB 설계도(모델). 설정은 `prisma7.config.ts`, 생성 코드는 `src/generated/prisma`(git 제외)
 - `prisma/seed.ts`, `prisma/seed-notes/*.md`: 개발용 예시 데이터
@@ -120,6 +121,10 @@ velog 형식의 화면으로 쓰는 개인 마크다운 노트 앱. 누구나 Go
     - 묶음 순서(`seriesOrder`)는 서버가 정한다: 넣으면 맨 뒤, 빠지면(삭제, 이동, 빼기) 뒤 번호를 당겨 항상 1, 2, 3처럼 빈틈없게. 묶음 생성(`upsert`)과 빈 묶음 삭제도 같은 곳에서 한다. 여러 단계를 바꾸는 작업은 `prisma.$transaction`으로 묶는다
   - `notes/schema.ts`: 노트 API가 받는 입력 규칙 (zod). 숫자 제한은 `schema.prisma`와 맞춘다
   - `series/service.ts`, `series/schema.ts`: 묶음(series) 조회
+  - `images/`: 노트 이미지. **이미지는 비공개**(올린 본인만). 파일은 S3, DB `images`에는 주인, S3 위치(`images/{userId}/{무작위}.{확장자}`), 종류, 크기만
+    - 업로드: 브라우저가 `POST /api/images`에 종류와 크기만 보내면 → 로그인한 누구나, png/jpg/gif/webp(svg 제외), 한 장 5MB, 사람별 100MB 확인 → S3 Presigned POST(조건에 크기와 종류, 5분) → 브라우저가 S3로 바로 보낸다
+    - 보기: 본문의 `![설명](https://api.../api/images/:id)` → 주인 확인 → S3 5분짜리 서명 주소로 302 (`Cache-Control: private, max-age=240`). `<img>`에도 로그인 쿠키가 붙는다 (같은 사이트, 쿠키 도메인)
+    - `s3.ts`만 S3를 안다. 열쇠는 SDK가 찾는다: 개발은 `apps/api/.env`의 `AWS_ACCESS_KEY_ID`(개발 버킷만 되는 IAM 사용자), 운영은 EC2 IAM 역할
   - `auth/session.ts`: 로그인 세션 만들기, 확인, 삭제. 기한은 로그인부터 **30일 고정**(연장 없음, 지나면 다시 로그인). 다시 로그인할 때 이 브라우저의 예전 세션과 그 사람의 기한 지난 세션을 지운다. 쿠키에는 무작위 토큰, DB(`sessions.id`)에는 그 SHA-256 값만 둔다
   - `auth/google.ts`: arctic(Google OAuth) 설정. `users/service.ts`: Google 사용자 찾기/만들기(`googleId`로 찾는다)
   - **노트, 묶음 서비스 함수는 모두 `userId`를 첫 인자로 받고, 모든 조회와 수정에 `userId` 조건을 붙인다** (`where: { id, userId }`). 하나라도 빠지면 남의 노트가 보인다. 남의 노트, 묶음은 403이 아니라 404로 "없는 것"처럼 응답한다. 묶음 이름은 사람마다 하나(`@@unique([userId, name])`)

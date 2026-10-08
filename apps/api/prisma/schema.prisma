@@ -69,10 +69,33 @@ model User {
   sessions        Session[]
   notes           Note[]
   series          Series[]
+  images          Image[]
   createdAt       DateTime  @default(now()) @map("created_at")
   updatedAt       DateTime  @updatedAt @map("updated_at")
 
   @@map("users")
+}
+
+// 노트에 넣은 이미지. 파일 자체는 S3에 있고, 여기에는 "누가 올린 어떤 파일인지"만 적는다.
+// 이미지는 비공개다: 보는 주소(/api/images/:id)로 오면 api가 주인인지 확인한 뒤에만 S3의 잠깐 열리는 주소로 보낸다.
+// 사람별 용량 제한(100MB)은 이 테이블의 size를 더해서 확인한다.
+model Image {
+  id          Int      @id @default(autoincrement())
+  // 주인. 사용자가 지워지면 기록도 같이 지운다(Cascade). S3의 파일은 남으니 따로 정리한다
+  userId      Int      @map("user_id")
+  user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  // S3 안의 파일 위치. 예: images/3/9f1c...e2.png
+  // 사람마다 폴더를 나누고 파일 이름은 무작위로 만들어서 겹치지도, 짐작하지도 못하게 한다
+  key         String   @unique @db.VarChar(255)
+  // 파일 종류 (image/png, image/jpeg 등). S3에서 꺼내 보여 줄 때 브라우저에 알려 준다
+  contentType String   @map("content_type") @db.VarChar(100)
+  // 파일 크기(바이트). 한 장 5MB, 사람별 합계 100MB 제한에 쓴다
+  size        Int
+  createdAt   DateTime @default(now()) @map("created_at")
+
+  // "이 사람의 이미지 용량 합계"를 빨리 구하려고
+  @@index([userId])
+  @@map("images")
 }
 
 // 로그인 세션: "이 쿠키를 가진 브라우저는 이 사용자로 로그인했다"는 기록.

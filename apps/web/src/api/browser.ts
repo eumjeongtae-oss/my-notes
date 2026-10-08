@@ -65,6 +65,32 @@ export function deleteNote(id: number) {
   return apiSend<void>("DELETE", `/api/notes/${id}`);
 }
 
+// 이미지 올리기. 성공하면 노트 본문에 넣을 이미지 주소를 돌려준다 (예: https://api.chagoknotes.com/api/images/7)
+//   ① POST /api/images 로 "이 파일 올려도 되나" 묻는다 (종류, 크기만 보냄). 백엔드가 5MB, 100MB를 확인한다
+//   ② 받은 업로드 주소(S3)로 파일을 바로 보낸다. 우리 서버를 거치지 않는다 (Presigned POST)
+// 이미지는 비공개라, 돌려주는 주소는 S3가 아니라 api 주소다. 볼 때마다 api가 주인을 확인한다
+export async function uploadImage(file: File) {
+  const { id, upload } = await apiSend<{
+    id: number;
+    upload: { url: string; fields: Record<string, string> };
+  }>("POST", "/api/images", { contentType: file.type, size: file.size });
+
+  // S3가 정한 형식: 받은 fields를 모두 넣고, 파일은 맨 마지막에 file이라는 이름으로
+  const form = new FormData();
+  for (const [name, value] of Object.entries(upload.fields)) {
+    form.append(name, value);
+  }
+  form.append("file", file);
+
+  // S3로 보내는 요청이라 로그인 쿠키는 필요 없다 (허락은 fields 안의 서명이 대신한다)
+  const response = await fetch(upload.url, { method: "POST", body: form });
+  if (!response.ok) {
+    throw new Error("이미지를 올리지 못했어요. 다시 시도해 주세요.");
+  }
+
+  return `${API_URL}/api/images/${id}`;
+}
+
 // POST /api/auth/logout (로그아웃). 백엔드가 세션을 지우고 session 쿠키도 지운다. 성공하면 204
 export function logout() {
   return apiSend<void>("POST", "/api/auth/logout");
