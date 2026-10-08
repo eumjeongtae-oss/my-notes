@@ -1,0 +1,11 @@
+# my-notes-deploy.service를 2분마다 실행하는 예약 (리눅스의 알람 시계)
+[Unit]
+Description=my-notes 자동 배포를 2분마다 확인
+
+[Timer]
+# 서버가 켜지고 2분 뒤 처음 실행, 그 뒤로는 앞 실행이 끝나고 2분마다
+OnBootSec=2min
+OnUnitActiveSec=2min
+
+[Install]
+WantedBy=timers.target
