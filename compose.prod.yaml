@@ -90,6 +90,10 @@ services:
       ADMIN_EMAILS: ${ADMIN_EMAILS:-}
       # 로그인 쿠키를 web과 api가 함께 쓸 도메인 (apps/api/src/lib/auth-cookies.ts). 로컬은 비워 둔다
       COOKIE_DOMAIN: ${COOKIE_DOMAIN:-}
+      # 이미지 보관함 (S3). 운영 서버는 열쇠(액세스 키) 없이 EC2에 달아 둔 IAM 역할로 S3를 쓴다.
+      # 컨테이너 안에서 그 역할을 받으려면 EC2 "인스턴스 메타데이터 옵션"의 홉 제한이 2여야 한다 (deploy/README.md)
+      AWS_REGION: ap-southeast-2
+      S3_IMAGES_BUCKET: ${S3_IMAGES_BUCKET:-chagoknotes-images}
     ports:
       - "4001:4000"
 
